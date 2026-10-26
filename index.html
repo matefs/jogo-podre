@@ -1,0 +1,3211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bridge Defense - Last Stand</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/playcanvas@1.73.4/build/playcanvas.min.js"></script>
+    <style>
+        :root {
+            --gold-light: #fff1a8;
+            --gold: #ffc72c;
+            --gold-deep: #f08c00;
+            --gold-shadow: #9a5200;
+            --navy: #10213d;
+            --navy-light: #1d3a66;
+            --sky-panel: #2b6cc4;
+            --sky-panel-deep: #163f80;
+            --outline: #0a1426;
+            --go-green: #6edc2e;
+            --go-green-deep: #2f8f0f;
+            --danger: #ff4a4a;
+            --danger-deep: #a8141c;
+            --gate-blue: #2f8cff;
+            --gate-blue-deep: #1559c9;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #a9def5;
+            font-family: 'Nunito', 'Segoe UI', Tahoma, sans-serif;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        canvas { display: block; width: 100vw; height: 100vh; }
+
+        .outlined-text {
+            color: #fff;
+            text-shadow:
+                0 3px 0 var(--outline),
+                2px 0 0 var(--outline), -2px 0 0 var(--outline),
+                0 2px 0 var(--outline), 0 -2px 0 var(--outline),
+                2px 2px 0 var(--outline), -2px 2px 0 var(--outline),
+                2px -2px 0 var(--outline), -2px -2px 0 var(--outline);
+        }
+
+        #vignette {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 4;
+            background:
+                linear-gradient(180deg, rgba(8, 28, 58, 0.38) 0%, rgba(8, 28, 58, 0) 20%),
+                radial-gradient(ellipse at 50% 55%, rgba(0, 0, 0, 0) 58%, rgba(6, 20, 40, 0.38) 100%);
+        }
+
+        #overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-top {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .level-card { display: flex; align-items: center; }
+        .level-badge {
+            position: relative;
+            z-index: 2;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, var(--gold-light), var(--gold) 45%, var(--gold-deep) 100%);
+            border: 3px solid var(--outline);
+            box-shadow: 0 4px 0 var(--outline), inset 0 -4px 0 rgba(154, 82, 0, 0.45);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Lilita One', sans-serif;
+        }
+        .level-badge span {
+            font-size: 0.62rem;
+            letter-spacing: 1px;
+            color: var(--gold-shadow);
+            line-height: 1;
+            margin-top: 3px;
+        }
+        .level-badge b { font-size: 1.6rem; line-height: 1; font-weight: 400; }
+        .level-panel {
+            margin-left: -16px;
+            padding: 6px 12px 7px 24px;
+            background: linear-gradient(180deg, var(--navy-light), var(--navy));
+            border: 3px solid var(--outline);
+            border-left: none;
+            border-radius: 0 14px 14px 0;
+            box-shadow: 0 4px 0 var(--outline);
+            min-width: 120px;
+        }
+        .level-panel-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-weight: 900;
+            font-size: 0.82rem;
+            color: #cfe3ff;
+        }
+        .level-panel-row b { color: #fff; }
+        .progress-track {
+            margin-top: 5px;
+            height: 10px;
+            background: #08111f;
+            border-radius: 6px;
+            border: 2px solid #050a14;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(180deg, #b6ff8a, var(--go-green) 50%, var(--go-green-deep));
+            border-radius: 4px;
+            transition: width 0.25s linear;
+        }
+
+        .top-buttons { display: flex; gap: 8px; pointer-events: auto; }
+        .btn-small {
+            width: 46px;
+            height: 46px;
+            box-sizing: border-box;
+            border-radius: 12px;
+            background: linear-gradient(180deg, var(--gold-light), var(--gold) 45%, var(--gold-deep));
+            border: 3px solid var(--outline);
+            box-shadow: 0 4px 0 var(--outline), inset 0 -3px 0 rgba(154, 82, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.6);
+            color: var(--navy);
+            font-size: 1.1rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.08s, box-shadow 0.08s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-small:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--outline), inset 0 -3px 0 rgba(154, 82, 0, 0.5); }
+
+        .hud-center {
+            position: absolute;
+            top: 84px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            pointer-events: none;
+        }
+        .score-capsule {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 20px 4px 5px;
+            background: linear-gradient(180deg, var(--navy-light), var(--navy));
+            border: 3px solid var(--outline);
+            border-radius: 999px;
+            box-shadow: 0 4px 0 var(--outline), inset 0 0 0 2px rgba(255, 199, 44, 0.55);
+        }
+        .score-coin {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, var(--gold-light), var(--gold) 50%, var(--gold-deep));
+            border: 2px solid var(--outline);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold-shadow);
+            font-size: 1.05rem;
+        }
+        #score-label {
+            font-family: 'Lilita One', sans-serif;
+            font-size: 1.85rem;
+            line-height: 1.1;
+            min-width: 56px;
+            text-align: center;
+        }
+        #lives-label {
+            font-size: 1.35rem;
+            letter-spacing: 3px;
+            color: var(--danger);
+            text-shadow: 0 2px 0 var(--outline), 1px 1px 0 var(--outline), -1px 1px 0 var(--outline), 1px -1px 0 var(--outline), -1px -1px 0 var(--outline);
+        }
+        #combo-label {
+            font-family: 'Lilita One', sans-serif;
+            font-size: 1.7rem;
+            color: var(--gold);
+            min-height: 2rem;
+            transition: transform 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #combo-label.bump { transform: scale(1.35) rotate(-4deg); }
+
+        .center-alert {
+            position: absolute;
+            top: 34%;
+            width: 100%;
+            text-align: center;
+            font-family: 'Lilita One', sans-serif;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 15;
+            letter-spacing: 1px;
+        }
+        #level-alert { color: var(--gold); font-size: 3.6rem; }
+        #level-alert small {
+            display: block;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 900;
+            font-size: 1.15rem;
+            letter-spacing: 4px;
+            color: #fff;
+            margin-top: 2px;
+        }
+        #toast-alert { top: 52%; color: #8fe8ff; font-size: 2.3rem; }
+        #toast-alert.tone-good { color: #8dff6a; }
+        #toast-alert.tone-bad { color: #ff6b6b; }
+        .center-alert.show { animation: alert-pop 2.2s ease-out forwards; }
+        #toast-alert.show { animation: alert-pop 1.1s ease-out forwards; }
+        @keyframes alert-pop {
+            0% { opacity: 0; transform: scale(0.5) translateY(10px); }
+            14% { opacity: 1; transform: scale(1.18) translateY(0); }
+            24% { transform: scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-32px); }
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 24px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 24px;
+            box-sizing: border-box;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .control-group { display: flex; gap: 14px; pointer-events: auto; align-items: center; }
+        .btn-ctrl {
+            width: 68px;
+            height: 68px;
+            box-sizing: border-box;
+            border-radius: 50%;
+            background: rgba(16, 33, 61, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 3px solid rgba(255, 255, 255, 0.85);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 900;
+            box-shadow: 0 4px 0 rgba(10, 20, 38, 0.6);
+            transition: transform 0.08s, background 0.12s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-ctrl.pressed {
+            background: rgba(255, 199, 44, 0.92);
+            color: var(--navy);
+            transform: scale(0.92);
+        }
+        .btn-jump {
+            width: 84px;
+            height: 84px;
+            background: linear-gradient(180deg, var(--gold-light), var(--gold) 45%, var(--gold-deep));
+            border: 4px solid var(--outline);
+            color: #fff;
+            font-family: 'Lilita One', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 0 var(--outline), inset 0 -4px 0 rgba(154, 82, 0, 0.5), inset 0 3px 0 rgba(255, 255, 255, 0.6);
+            text-shadow: 0 2px 0 var(--outline), 1px 1px 0 var(--outline), -1px 1px 0 var(--outline), 1px -1px 0 var(--outline), -1px -1px 0 var(--outline);
+        }
+        .btn-jump.pressed {
+            background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+            color: #fff;
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 var(--outline);
+        }
+
+        .modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(360px, calc(100vw - 32px));
+            box-sizing: border-box;
+            background: linear-gradient(180deg, #3d86e0 0%, var(--sky-panel) 30%, var(--sky-panel-deep) 100%);
+            border: 4px solid var(--outline);
+            border-radius: 22px;
+            box-shadow: 0 8px 0 var(--outline), 0 24px 60px rgba(0, 0, 0, 0.45), inset 0 0 0 3px rgba(255, 255, 255, 0.22);
+            padding: 44px 20px 22px;
+            color: #fff;
+            text-align: center;
+            display: none;
+            pointer-events: auto;
+            z-index: 30;
+        }
+        .modal-ribbon {
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0;
+            padding: 8px 26px;
+            white-space: nowrap;
+            font-family: 'Lilita One', sans-serif;
+            font-weight: 400;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+            background: linear-gradient(180deg, var(--gold-light), var(--gold) 50%, var(--gold-deep));
+            border: 4px solid var(--outline);
+            border-radius: 14px;
+            box-shadow: 0 5px 0 var(--outline), inset 0 -4px 0 rgba(154, 82, 0, 0.45);
+        }
+        .modal-ribbon.danger {
+            background: linear-gradient(180deg, #ff9f92, var(--danger) 50%, var(--danger-deep));
+            box-shadow: 0 5px 0 var(--outline), inset 0 -4px 0 rgba(90, 0, 0, 0.35);
+        }
+        .modal p {
+            margin: 8px 0;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #e3efff;
+        }
+        .info-box {
+            background: rgba(8, 22, 48, 0.42);
+            border: 2px solid rgba(0, 0, 0, 0.25);
+            border-radius: 14px;
+            padding: 8px 12px;
+            margin: 6px 0 4px;
+        }
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+            margin: 7px 0;
+            font-weight: 800;
+            font-size: 0.92rem;
+            color: #eaf3ff;
+        }
+        .gate-chip {
+            flex: 0 0 auto;
+            min-width: 46px;
+            padding: 3px 6px;
+            box-sizing: border-box;
+            border-radius: 9px;
+            border: 2px solid var(--outline);
+            font-family: 'Lilita One', sans-serif;
+            font-size: 1.05rem;
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 2px 0 var(--outline);
+        }
+        .gate-chip.good { background: linear-gradient(180deg, #6fc0ff, var(--gate-blue-deep)); }
+        .gate-chip.bad { background: linear-gradient(180deg, #ff8b8b, #d32626); }
+        .gate-chip.gold { background: linear-gradient(180deg, var(--gold-light), var(--gold-deep)); }
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 4px 0 8px;
+        }
+        .result-tile {
+            background: rgba(8, 22, 48, 0.45);
+            border: 2px solid rgba(0, 0, 0, 0.25);
+            border-radius: 12px;
+            padding: 8px 4px;
+        }
+        .result-tile span { display: block; font-size: 0.72rem; font-weight: 900; color: #b8cff2; letter-spacing: 1px; }
+        .result-tile b { display: block; font-family: 'Lilita One', sans-serif; font-weight: 400; font-size: 1.45rem; margin-top: 2px; }
+        .new-record {
+            font-family: 'Lilita One', sans-serif;
+            font-size: 1.2rem !important;
+            color: var(--gold) !important;
+            display: none;
+        }
+        .btn-restart {
+            font-family: 'Lilita One', sans-serif;
+            font-size: 1.55rem;
+            letter-spacing: 1px;
+            color: #fff;
+            padding: 10px 40px;
+            margin-top: 16px;
+            border: 4px solid var(--outline);
+            border-radius: 16px;
+            background: linear-gradient(180deg, #c2ff8c, var(--go-green) 45%, var(--go-green-deep));
+            box-shadow: 0 6px 0 var(--outline), inset 0 -4px 0 rgba(0, 0, 0, 0.2), inset 0 3px 0 rgba(255, 255, 255, 0.5);
+            text-shadow: 0 3px 0 var(--outline), 2px 2px 0 var(--outline), -2px 2px 0 var(--outline), 2px -2px 0 var(--outline), -2px -2px 0 var(--outline);
+            cursor: pointer;
+            transition: transform 0.08s, box-shadow 0.08s, filter 0.12s;
+        }
+        .btn-restart:hover { filter: brightness(1.07); }
+        .btn-restart:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--outline), inset 0 -4px 0 rgba(0, 0, 0, 0.2); }
+        .hint {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #bcd4f5;
+            margin-top: 16px;
+            line-height: 1.5;
+        }
+
+        #damage-flash {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, rgba(255, 0, 55, 0) 30%, rgba(255, 0, 55, 0) 100%);
+            pointer-events: none;
+            z-index: 5;
+            transition: opacity 0.18s;
+            opacity: 0;
+        }
+        #loading-screen {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 35%, #4aa3ff, var(--sky-panel-deep) 70%);
+            color: #fff;
+            font-family: 'Lilita One', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            font-size: 2rem;
+            text-align: center;
+            padding: 20px;
+            text-shadow: 0 4px 0 var(--outline), 2px 2px 0 var(--outline), -2px 2px 0 var(--outline), 2px -2px 0 var(--outline), -2px -2px 0 var(--outline);
+        }
+
+        @media (max-width: 420px) {
+            .level-panel { min-width: 96px; padding-right: 10px; }
+            #controls { padding: 0 16px; }
+            .btn-ctrl { width: 60px; height: 60px; }
+            .btn-jump { width: 76px; height: 76px; }
+            #level-alert { font-size: 2.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+<div id="vignette"></div>
+<div id="loading-screen">BRIDGE DEFENSE<br>carregando...</div>
+<div id="damage-flash"></div>
+<div id="level-alert" class="center-alert outlined-text"></div>
+<div id="toast-alert" class="center-alert outlined-text"></div>
+
+<div id="overlay">
+    <div class="hud-top">
+        <div class="level-card">
+            <div class="level-badge"><span>FASE</span><b id="level-label" class="outlined-text">1</b></div>
+            <div class="level-panel">
+                <div class="level-panel-row">
+                    <span>⏱ <b id="time-label">0s</b></span>
+                    <span>👥 <b id="soldier-label">1</b></span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="level-progress-fill"></div></div>
+            </div>
+        </div>
+        <div class="top-buttons">
+            <div class="btn-small" id="btn-mute">🔊</div>
+            <div class="btn-small" id="btn-pause">❚❚</div>
+        </div>
+    </div>
+
+    <div class="hud-center">
+        <div class="score-capsule">
+            <div class="score-coin">★</div>
+            <div id="score-label" class="outlined-text">0</div>
+        </div>
+        <div id="lives-label"></div>
+        <div id="combo-label" class="outlined-text"></div>
+    </div>
+
+    <div id="start-modal" class="modal" style="display: block;">
+        <h1 class="modal-ribbon outlined-text">BRIDGE DEFENSE</h1>
+        <p>Segure a ponte contra a horda zumbi!</p>
+        <div class="info-box">
+            <div class="legend-row"><span class="gate-chip good">+5</span>Passe pelos portões azuis para ganhar soldados</div>
+            <div class="legend-row"><span class="gate-chip bad">-3</span>Evite os vermelhos, ou atire neles para subir o valor</div>
+            <div class="legend-row"><span class="gate-chip gold">+3</span>Destrua os barris para recrutar reforços</div>
+        </div>
+        <p id="start-best-label" style="color: var(--gold); font-weight: 900;"></p>
+        <button class="btn-restart" id="start-game">JOGAR</button>
+        <div class="hint">Arraste ou ← → / A D: mover &nbsp;·&nbsp; ↑ / W / Espaço: pular<br>P / Esc: pausar &nbsp;·&nbsp; M: áudio</div>
+    </div>
+
+    <div id="pause-modal" class="modal">
+        <h1 class="modal-ribbon outlined-text">PAUSADO</h1>
+        <p>A horda está esperando...</p>
+        <button class="btn-restart" id="resume-game">CONTINUAR</button>
+    </div>
+
+    <div id="game-over-modal" class="modal">
+        <h1 class="modal-ribbon danger outlined-text">PONTE TOMADA</h1>
+        <div class="result-grid">
+            <div class="result-tile"><span>PONTOS</span><b id="final-score-label" class="outlined-text">0</b></div>
+            <div class="result-tile"><span>TEMPO</span><b id="final-time-label" class="outlined-text">0s</b></div>
+            <div class="result-tile"><span>FASE</span><b id="final-level-label" class="outlined-text">1</b></div>
+        </div>
+        <p id="final-best-label"></p>
+        <p id="new-record-label" class="new-record outlined-text">★ NOVO RECORDE! ★</p>
+        <button class="btn-restart" id="restart-game">DE NOVO</button>
+    </div>
+</div>
+
+<div id="controls">
+    <div class="control-group">
+        <div class="btn-ctrl" id="btn-left">←</div>
+        <div class="btn-ctrl" id="btn-right">→</div>
+    </div>
+    <div class="control-group">
+        <div class="btn-ctrl btn-jump" id="btn-jump">PULAR</div>
+    </div>
+</div>
+
+<script>
+const RAD_TO_DEG = 180 / Math.PI;
+
+const Configuration = {
+    RoadWidth: 12,
+    WorldSpeed: 0.85,
+    EnemyBaseSpeed: 0.25,
+    EnemySpeedPerLevel: 0.03,
+    EnemyHpPerSoldier: 0.06,
+    ProjectileSpeed: 7.4,
+    FireRateMs: 150,
+    MaxSoldiers: 60,
+    MaxBulletsPerVolley: 10,
+    JumpForce: 0.55,
+    Gravity: 0.032,
+    MoveSpeed: 0.4,
+    DragFollowSpeed: 0.75,
+    DragWorldUnitsAcrossScreen: 22,
+    MinPlatoonLimitX: 1.4,
+    CrowdEdgeMargin: 0.5,
+    CrowdSpacing: 0.62,
+    SoldierScale: 0.85,
+    SoldierHalfWidth: 0.3,
+    SoldierSpawnPopSeconds: 0.35,
+    SoldierGunOffsetX: 0.36,
+    SoldierGunHeight: 1.05,
+    SoldierGunForwardOffset: -1.3,
+    SegmentLength: 60,
+    SegmentCount: 4,
+    SpawnZ: -165,
+    DespawnZ: 35,
+    EnemyBreachZ: 30,
+    BulletMaxZ: -200,
+
+    LevelDurationSeconds: 60,
+    MaxLives: 3,
+    InvulnerabilitySeconds: 1.2,
+    JumpBufferSeconds: 0.15,
+    ComboWindowSeconds: 1.5,
+    KillsPerComboStep: 5,
+    MaxComboMultiplier: 5,
+    MaxSoldierBonusScore: 500,
+    OverflowSoldierScore: 25,
+    BruteContactSoldierLoss: 3,
+    MaxLiveParticles: 450,
+
+    GateHitsPerValueStep: 8,
+    GateClearanceMs: 900,
+    FirstGateDelayMs: 3000,
+
+    L1_SpawnInterval_Start: 3200,
+    L1_SpawnInterval_End: 1300,
+    L1_BuffInterval: 5000,
+    L1_HazardInterval: 4200,
+    L1_GateInterval: 7000,
+
+    L2_SpawnInterval: 1100,
+    L2_BuffInterval: 4000,
+    L2_HazardInterval: 3000,
+    L2_GateInterval: 6000,
+    MinGateInterval: 4500,
+
+    Colors: {
+        Skin: 0xffc89a,
+        PlayerUniform: 0x2f80ed,
+        PlayerHelmet: 0x1b5fc1,
+        LeaderHelmet: 0xffc72c,
+        PlayerPants: 0x173d7a,
+        PlayerGun: 0x2b2f36,
+        PlayerAccent: 0x5fd0ff,
+        MuzzleFlash: 0xfff1a8,
+        ZombieSkin: 0x8bc34a,
+        ZombieShirt: 0x7a6552,
+        ZombiePants: 0x3e4a5a,
+        ZombieEyes: 0xff3b30,
+        ZombieGoo: 0x9ccc65,
+        BruteSkin: 0xd84a3a,
+        BruteShirt: 0x3b2a2a,
+        BruteEyes: 0xffe14d,
+        BruteGoo: 0xff7043,
+        Blood: 0xb71c1c,
+        Bullet: 0xffc83d,
+        BulletCore: 0xffffff,
+        Barrel: 0xffb300,
+        BarrelGlow: 0xffd54f,
+        GateGood: 0x2f8cff,
+        GateGoodDeep: 0x1559c9,
+        GateBad: 0xff3b3b,
+        GateBadDeep: 0xb3141c,
+        GatePost: 0xf1f5fb,
+        HazardStripe: 0xff3b30,
+        Spike: 0xdfe6ee,
+        LandingDust: 0xf5f0e6,
+        BridgeOrange: 0xd9472b,
+        BridgeOrangeDeep: 0xa8321c,
+        Concrete: 0xcfd4da,
+        ConcreteDark: 0x9aa3ad,
+        Steel: 0x4a5a6a,
+        LampGlow: 0xfff1c1
+    }
+};
+
+function hexToColor(hex) {
+    return new pc.Color(((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255);
+}
+
+function easeOutBack(progress) {
+    const overshoot = 1.70158;
+    const shifted = progress - 1;
+    return 1 + (overshoot + 1) * shifted * shifted * shifted + overshoot * shifted * shifted;
+}
+
+const TextureGenerator = {
+    app: null,
+    cache: new Map(),
+
+    init(app) {
+        this.app = app;
+        this.asphalt();
+        this.curbStripes();
+        this.waterGrid();
+        this.hazardStripes();
+        this.barrel();
+        this.dropShadow();
+        this.skyDome();
+    },
+
+    createCanvasTexture(key, width, height, drawFn, mipmaps = true) {
+        if (this.cache.has(key)) return this.cache.get(key);
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        drawFn(ctx, width, height);
+
+        const tex = new pc.Texture(this.app.graphicsDevice, {
+            width,
+            height,
+            format: pc.PIXELFORMAT_R8_G8_B8_A8,
+            mipmaps,
+            minFilter: mipmaps ? pc.FILTER_LINEAR_MIPMAP_LINEAR : pc.FILTER_LINEAR,
+            magFilter: pc.FILTER_LINEAR,
+            addressU: pc.ADDRESS_REPEAT,
+            addressV: pc.ADDRESS_REPEAT,
+            anisotropy: 8
+        });
+        tex.setSource(canvas);
+        this.cache.set(key, tex);
+        return tex;
+    },
+
+    asphalt() {
+        return this.createCanvasTexture('asphalt', 256, 512, (ctx, w, h) => {
+            ctx.fillStyle = '#4b525b';
+            ctx.fillRect(0, 0, w, h);
+            for (let i = 0; i < 5200; i++) {
+                const v = 62 + Math.floor(Math.random() * 30);
+                ctx.fillStyle = `rgba(${v},${v + 4},${v + 10},0.55)`;
+                ctx.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+            }
+            [0.3, 0.7].forEach(u => {
+                const trackGradient = ctx.createLinearGradient(u * w - 18, 0, u * w + 18, 0);
+                trackGradient.addColorStop(0, 'rgba(20, 24, 30, 0)');
+                trackGradient.addColorStop(0.5, 'rgba(20, 24, 30, 0.22)');
+                trackGradient.addColorStop(1, 'rgba(20, 24, 30, 0)');
+                ctx.fillStyle = trackGradient;
+                ctx.fillRect(u * w - 18, 0, 36, h);
+            });
+            ctx.fillStyle = '#f4f4f0';
+            [0.085, 0.915].forEach(u => ctx.fillRect(u * w - 3, 0, 6, h));
+            ctx.fillRect(w / 2 - 3, 0, 6, h * 0.5);
+        });
+    },
+
+    curbStripes() {
+        return this.createCanvasTexture('curb', 64, 128, (ctx, w, h) => {
+            ctx.fillStyle = '#e53935';
+            ctx.fillRect(0, 0, w, h / 2);
+            ctx.fillStyle = '#f5f5f5';
+            ctx.fillRect(0, h / 2, w, h / 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+            ctx.fillRect(0, 0, w, 3);
+            ctx.fillRect(0, h / 2, w, 3);
+        });
+    },
+
+    waterGrid() {
+        return this.createCanvasTexture('waterGrid', 512, 512, (ctx, w, h) => {
+            ctx.fillStyle = '#1aa6d9';
+            ctx.fillRect(0, 0, w, h);
+
+            const drawWrapped = (x, y, margin, drawAt) => {
+                for (const offsetX of [-w, 0, w]) {
+                    for (const offsetY of [-h, 0, h]) {
+                        const px = x + offsetX;
+                        const py = y + offsetY;
+                        if (px < -margin || px > w + margin || py < -margin || py > h + margin) continue;
+                        drawAt(px, py);
+                    }
+                }
+            };
+
+            const bandCount = 8;
+            for (let band = 0; band < bandCount; band++) {
+                const baseY = band * (h / bandCount);
+                [-h, 0, h].forEach(offsetY => {
+                    ctx.beginPath();
+                    for (let x = 0; x <= w; x += 8) {
+                        const y = baseY + offsetY + Math.sin((x / w) * Math.PI * 4 + band) * 10;
+                        if (x === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.strokeStyle = band % 2 === 0 ? 'rgba(8, 92, 150, 0.28)' : 'rgba(90, 220, 245, 0.22)';
+                    ctx.lineWidth = 22;
+                    ctx.stroke();
+                });
+            }
+
+            ctx.lineCap = 'round';
+            for (let i = 0; i < 140; i++) {
+                const crestHalfWidth = 10 + Math.random() * 22;
+                const alpha = 0.35 + Math.random() * 0.35;
+                drawWrapped(Math.random() * w, Math.random() * h, crestHalfWidth + 4, (px, py) => {
+                    ctx.beginPath();
+                    ctx.moveTo(px - crestHalfWidth, py);
+                    ctx.quadraticCurveTo(px, py - crestHalfWidth * 0.45, px + crestHalfWidth, py);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                });
+            }
+
+            for (let i = 0; i < 220; i++) {
+                const sparkleRadius = 1 + Math.random() * 1.4;
+                ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + Math.random() * 0.4})`;
+                drawWrapped(Math.random() * w, Math.random() * h, 4, (px, py) => {
+                    ctx.beginPath();
+                    ctx.arc(px, py, sparkleRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+        });
+    },
+
+    hazardStripes() {
+        return this.createCanvasTexture('hazard', 128, 128, (ctx, w, h) => {
+            ctx.fillStyle = '#f5f5f5';
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = '#e53935';
+            for (let i = -h; i < w + h; i += 32) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i + 16, 0);
+                ctx.lineTo(i - 16, h);
+                ctx.lineTo(i - 32, h);
+                ctx.closePath();
+                ctx.fill();
+            }
+        });
+    },
+
+    barrel() {
+        return this.createCanvasTexture('barrel', 128, 128, (ctx, w, h) => {
+            ctx.fillStyle = '#ffb300';
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+            ctx.fillRect(0, 28, w, 6);
+            ctx.fillStyle = '#3b2a20';
+            ctx.fillRect(0, 10, w, 10);
+            ctx.fillRect(0, h - 20, w, 10);
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            for (let point = 0; point < 10; point++) {
+                const radius = point % 2 === 0 ? 24 : 10;
+                const angle = -Math.PI / 2 + point * Math.PI / 5;
+                const px = w / 2 + Math.cos(angle) * radius;
+                const py = h / 2 + Math.sin(angle) * radius;
+                if (point === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+        });
+    },
+
+    dropShadow() {
+        return this.createCanvasTexture('shadow', 64, 64, (ctx, w, h) => {
+            const grad = ctx.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2);
+            grad.addColorStop(0, 'rgba(0, 0, 0, 0.55)');
+            grad.addColorStop(0.65, 'rgba(0, 0, 0, 0.22)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+        }, false);
+    },
+
+    skyDome() {
+        return this.createCanvasTexture('skyDome', 512, 512, (ctx, w, h) => {
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, '#0277bd');
+            grad.addColorStop(0.45, '#29b6f6');
+            grad.addColorStop(0.82, '#81d4fa');
+            grad.addColorStop(1, '#ffe082');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+            for (let i = 0; i < 16; i++) {
+                const cx = Math.random() * w;
+                const cy = 60 + Math.random() * (h * 0.5);
+                const rx = 28 + Math.random() * 42;
+                const ry = 9 + Math.random() * 14;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }, false);
+    }
+};
+
+const MaterialCache = {
+    store: new Map(),
+    standard(color, extraOptions = {}) {
+        const key = `std:${color}:${JSON.stringify(extraOptions)}`;
+        if (!this.store.has(key)) {
+            const mat = new pc.StandardMaterial();
+            mat.diffuse = hexToColor(color);
+            const roughness = extraOptions.roughness ?? 0.48;
+            mat.gloss = 1 - roughness;
+            mat.useMetalness = false;
+            mat.specular = new pc.Color(0.22, 0.22, 0.25);
+            if (extraOptions.emissive !== undefined) {
+                mat.emissive = hexToColor(extraOptions.emissive);
+                mat.emissiveIntensity = extraOptions.emissiveIntensity ?? 1.4;
+            }
+            if (extraOptions.opacity !== undefined) {
+                mat.opacity = extraOptions.opacity;
+                mat.blendType = pc.BLEND_NORMAL;
+            }
+            mat.update();
+            this.store.set(key, mat);
+        }
+        return this.store.get(key);
+    },
+    textured(key, texture, options = {}) {
+        if (!this.store.has(key)) {
+            const mat = new pc.StandardMaterial();
+            mat.diffuse = options.color ? hexToColor(options.color) : new pc.Color(1, 1, 1);
+            mat.diffuseMap = texture;
+            if (options.tiling) {
+                mat.diffuseMapTiling = new pc.Vec2(options.tiling[0], options.tiling[1]);
+            }
+            mat.useMetalness = false;
+            mat.gloss = 1 - (options.roughness ?? 0.45);
+            mat.specular = new pc.Color(0.25, 0.25, 0.28);
+            if (options.emissive) {
+                mat.emissive = hexToColor(options.emissive);
+                mat.emissiveMap = texture;
+                if (options.tiling) {
+                    mat.emissiveMapTiling = new pc.Vec2(options.tiling[0], options.tiling[1]);
+                }
+                mat.emissiveIntensity = options.emissiveIntensity ?? 0.4;
+            }
+            mat.update();
+            this.store.set(key, mat);
+        }
+        return this.store.get(key);
+    },
+    shadowBlob() {
+        const key = 'shadowBlob';
+        if (!this.store.has(key)) {
+            const tex = TextureGenerator.dropShadow();
+            const mat = new pc.StandardMaterial();
+            mat.diffuse = new pc.Color(0, 0, 0);
+            mat.opacityMap = tex;
+            mat.opacityMapChannel = 'a';
+            mat.blendType = pc.BLEND_NORMAL;
+            mat.useLighting = false;
+            mat.depthWrite = false;
+            mat.update();
+            this.store.set(key, mat);
+        }
+        return this.store.get(key);
+    },
+    basic(color, intensity = 1.4) {
+        const key = `basic:${color}:${intensity}`;
+        if (!this.store.has(key)) {
+            const mat = new pc.StandardMaterial();
+            mat.diffuse = new pc.Color(0, 0, 0);
+            mat.emissive = hexToColor(color);
+            mat.emissiveIntensity = intensity;
+            mat.useLighting = false;
+            mat.update();
+            this.store.set(key, mat);
+        }
+        return this.store.get(key);
+    }
+};
+
+const SharedMeshes = {
+    torusMesh: null,
+    torus(graphicsDevice) {
+        if (!this.torusMesh) {
+            this.torusMesh = pc.createTorus(graphicsDevice, {
+                tubeRadius: 0.22,
+                ringRadius: 3.1,
+                segments: 32,
+                sides: 12
+            });
+        }
+        return this.torusMesh;
+    }
+};
+
+function createPrimitive(type, scaleX, scaleY, scaleZ, material, castShadows = false, receiveShadows = false) {
+    const entity = new pc.Entity();
+    entity.addComponent('render', {
+        type,
+        material,
+        castShadows,
+        receiveShadows
+    });
+    entity.setLocalScale(scaleX, scaleY, scaleZ);
+    return entity;
+}
+
+function createTorusEntity(material) {
+    const entity = new pc.Entity();
+    const meshInstance = new pc.MeshInstance(SharedMeshes.torus(TextureGenerator.app.graphicsDevice), material);
+    entity.addComponent('render', { meshInstances: [meshInstance], castShadows: false, receiveShadows: false });
+    return entity;
+}
+
+function createCanvasLabel(app, pixelWidth, pixelHeight, worldWidth, worldHeight, tiltDegrees = 90) {
+    const canvas = document.createElement('canvas');
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+    const context = canvas.getContext('2d');
+    const texture = new pc.Texture(app.graphicsDevice, {
+        width: pixelWidth,
+        height: pixelHeight,
+        format: pc.PIXELFORMAT_R8_G8_B8_A8,
+        mipmaps: false,
+        minFilter: pc.FILTER_LINEAR,
+        magFilter: pc.FILTER_LINEAR,
+        addressU: pc.ADDRESS_CLAMP_TO_EDGE,
+        addressV: pc.ADDRESS_CLAMP_TO_EDGE
+    });
+    texture.setSource(canvas);
+
+    const material = new pc.StandardMaterial();
+    material.diffuse = new pc.Color(0, 0, 0);
+    material.emissive = new pc.Color(1, 1, 1);
+    material.emissiveMap = texture;
+    material.opacityMap = texture;
+    material.opacityMapChannel = 'a';
+    material.blendType = pc.BLEND_NORMAL;
+    material.useLighting = false;
+    material.useFog = false;
+    material.depthWrite = false;
+    material.cull = pc.CULLFACE_NONE;
+    material.update();
+
+    const entity = createPrimitive('plane', worldWidth, 1, worldHeight, material, false, false);
+    entity.setLocalEulerAngles(tiltDegrees, 0, 0);
+    return { entity, texture, material, canvas, context };
+}
+
+function destroyCanvasLabel(label) {
+    label.material.destroy();
+    label.texture.destroy();
+}
+
+function traceRoundedRect(context, x, y, width, height, radius) {
+    context.beginPath();
+    context.moveTo(x + radius, y);
+    context.arcTo(x + width, y, x + width, y + height, radius);
+    context.arcTo(x + width, y + height, x, y + height, radius);
+    context.arcTo(x, y + height, x, y, radius);
+    context.arcTo(x, y, x + width, y, radius);
+    context.closePath();
+}
+
+function drawOutlinedText(context, text, x, y, fontPx, fillStyle, strokeWidth) {
+    context.font = `${fontPx}px 'Lilita One', 'Arial Black', sans-serif`;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.lineJoin = 'round';
+    context.lineWidth = strokeWidth;
+    context.strokeStyle = '#0a1426';
+    context.strokeText(text, x, y);
+    context.fillStyle = fillStyle;
+    context.fillText(text, x, y);
+}
+
+class SoundBoard {
+    constructor() {
+        this.audioContext = null;
+        this.isMuted = false;
+        this.lastPlayedAtMs = {};
+        this.bgmTimer = null;
+        this.bgmStep = 0;
+        this.isBgmPlaying = false;
+    }
+
+    unlock() {
+        if (!this.audioContext) {
+            const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextConstructor) this.audioContext = new AudioContextConstructor();
+        }
+        if (this.audioContext && this.audioContext.state === 'suspended') this.audioContext.resume();
+    }
+
+    startMusic() {
+        this.unlock();
+        this.isBgmPlaying = true;
+        if (this.bgmTimer) return;
+        // 150 BPM 16th-note adrenaline synthwave/electro loop (100ms per 16th step)
+        const bassLine = [
+            110, 110, 220, 110, 110, 110, 220, 110,
+            87.31, 87.31, 174.61, 87.31, 98.0, 98.0, 196.0, 130.81
+        ];
+        const leadArp = [
+            440, 0, 523.25, 659.25, 440, 0, 783.99, 659.25,
+            349.23, 0, 440, 523.25, 392.0, 0, 587.33, 659.25
+        ];
+
+        this.bgmTimer = setInterval(() => {
+            if (!this.isBgmPlaying || this.isMuted || !this.audioContext || this.audioContext.state !== 'running') return;
+            const step = this.bgmStep++ % 16;
+            const now = this.audioContext.currentTime;
+
+            // Four-on-the-floor punchy low kick (steps 0, 4, 8, 12)
+            if (step % 4 === 0) {
+                const kickOsc = this.audioContext.createOscillator();
+                const kickGain = this.audioContext.createGain();
+                kickOsc.type = 'sine';
+                kickOsc.frequency.setValueAtTime(125, now);
+                kickOsc.frequency.exponentialRampToValueAtTime(36, now + 0.09);
+                kickGain.gain.setValueAtTime(0.032, now);
+                kickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.095);
+                kickOsc.connect(kickGain).connect(this.audioContext.destination);
+                kickOsc.start(now);
+                kickOsc.stop(now + 0.095);
+            }
+
+            // Off-beat crisp hi-hat tick (steps 2, 6, 10, 14)
+            if (step % 4 === 2) {
+                const hatOsc = this.audioContext.createOscillator();
+                const hatGain = this.audioContext.createGain();
+                hatOsc.type = 'triangle';
+                hatOsc.frequency.setValueAtTime(3400, now);
+                hatOsc.frequency.exponentialRampToValueAtTime(1200, now + 0.03);
+                hatGain.gain.setValueAtTime(0.008, now);
+                hatGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+                hatOsc.connect(hatGain).connect(this.audioContext.destination);
+                hatOsc.start(now);
+                hatOsc.stop(now + 0.03);
+            }
+
+            // Driving bassline (low volume)
+            const bassFreq = bassLine[step];
+            if (bassFreq) {
+                const bassOsc = this.audioContext.createOscillator();
+                const bassGain = this.audioContext.createGain();
+                bassOsc.type = 'sawtooth';
+                bassOsc.frequency.setValueAtTime(bassFreq, now);
+                bassGain.gain.setValueAtTime(0.015, now);
+                bassGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.085);
+                bassOsc.connect(bassGain).connect(this.audioContext.destination);
+                bassOsc.start(now);
+                bassOsc.stop(now + 0.085);
+            }
+
+            // Fast adrenaline arp lead (subtle background volume)
+            const arpFreq = leadArp[step];
+            if (arpFreq) {
+                const arpOsc = this.audioContext.createOscillator();
+                const arpGain = this.audioContext.createGain();
+                arpOsc.type = 'triangle';
+                arpOsc.frequency.setValueAtTime(arpFreq, now);
+                arpGain.gain.setValueAtTime(0.012, now);
+                arpGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.075);
+                arpOsc.connect(arpGain).connect(this.audioContext.destination);
+                arpOsc.start(now);
+                arpOsc.stop(now + 0.075);
+            }
+        }, 100);
+    }
+
+    stopMusic() {
+        this.isBgmPlaying = false;
+    }
+
+    playTone(soundName, { startFrequency, endFrequency = startFrequency, durationSeconds, waveType = 'square', volume = 0.05, throttleMs = 0 }) {
+        if (this.isMuted || !this.audioContext) return;
+        const nowMs = performance.now();
+        if (throttleMs && nowMs - (this.lastPlayedAtMs[soundName] || 0) < throttleMs) return;
+        this.lastPlayedAtMs[soundName] = nowMs;
+        const startTime = this.audioContext.currentTime;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        oscillator.type = waveType;
+        oscillator.frequency.setValueAtTime(startFrequency, startTime);
+        oscillator.frequency.exponentialRampToValueAtTime(Math.max(endFrequency, 1), startTime + durationSeconds);
+        gainNode.gain.setValueAtTime(volume, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + durationSeconds);
+        oscillator.connect(gainNode).connect(this.audioContext.destination);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + durationSeconds);
+    }
+
+    playEnemyHit() { this.playTone('hit', { startFrequency: 900, endFrequency: 600, durationSeconds: 0.04, volume: 0.015, throttleMs: 50 }); }
+    playEnemyKill() { this.playTone('kill', { startFrequency: 260, endFrequency: 90, durationSeconds: 0.12, volume: 0.05, throttleMs: 40 }); }
+    playBuffHit() { this.playTone('buffHit', { startFrequency: 1200, durationSeconds: 0.03, waveType: 'triangle', volume: 0.02, throttleMs: 60 }); }
+    playRecruit() { this.playTone('recruit', { startFrequency: 520, endFrequency: 1560, durationSeconds: 0.25, waveType: 'triangle', volume: 0.09 }); }
+    playJump() { this.playTone('jump', { startFrequency: 280, endFrequency: 620, durationSeconds: 0.12, waveType: 'sine', volume: 0.06 }); }
+    playDamage() { this.playTone('damage', { startFrequency: 160, endFrequency: 40, durationSeconds: 0.35, waveType: 'sawtooth', volume: 0.12 }); }
+    playSoldierLost() { this.playTone('soldierLost', { startFrequency: 400, endFrequency: 120, durationSeconds: 0.2, waveType: 'sawtooth', volume: 0.06 }); }
+    playLevelUp() {
+        [523, 659, 784, 1046].forEach((frequency, index) => {
+            setTimeout(() => this.playTone(`level${index}`, { startFrequency: frequency, durationSeconds: 0.18, waveType: 'triangle', volume: 0.08 }), index * 110);
+        });
+    }
+}
+
+class HytaleModelFactory {
+    static createLimbPivot(parent, x, pivotY, limbWidth, limbHeight, limbDepth, material, castShadows = false) {
+        const pivot = new pc.Entity();
+        pivot.setLocalPosition(x, pivotY, 0);
+        const limb = createPrimitive('box', limbWidth, limbHeight, limbDepth, material, castShadows, false);
+        limb.setLocalPosition(0, -limbHeight / 2, 0);
+        pivot.addChild(limb);
+        parent.addChild(pivot);
+        return pivot;
+    }
+
+    static createCrowdSoldier(isLeader = false) {
+        const colors = Configuration.Colors;
+        const group = new pc.Entity();
+        const part = (width, height, depth, color, options = {}) =>
+            createPrimitive('box', width, height, depth, MaterialCache.standard(color, options), false, false);
+
+        const uniformMat = MaterialCache.standard(colors.PlayerUniform, { roughness: 0.55 });
+        const pantsMat = MaterialCache.standard(colors.PlayerPants, { roughness: 0.6 });
+        const legLeftPivot = this.createLimbPivot(group, -0.18, 0.78, 0.26, 0.7, 0.28, pantsMat);
+        const legRightPivot = this.createLimbPivot(group, 0.18, 0.78, 0.26, 0.7, 0.28, pantsMat);
+
+        const torso = part(0.7, 0.82, 0.44, colors.PlayerUniform, { roughness: 0.55 });
+        torso.setLocalPosition(0, 1.18, 0);
+        group.addChild(torso);
+
+        const head = part(0.5, 0.48, 0.48, colors.Skin, { roughness: 0.7 });
+        head.setLocalPosition(0, 1.86, 0);
+        group.addChild(head);
+
+        const helmetColor = isLeader ? colors.LeaderHelmet : colors.PlayerHelmet;
+        const helmet = part(0.64, 0.32, 0.66, helmetColor, { roughness: 0.35 });
+        helmet.setLocalPosition(0, 2.1, 0.02);
+        group.addChild(helmet);
+
+        const gunArmPivot = this.createLimbPivot(group, 0.42, 1.5, 0.22, 0.7, 0.22, uniformMat);
+        gunArmPivot.setLocalEulerAngles(78, 0, 0);
+        const gun = part(0.14, 1.1, 0.2, colors.PlayerGun, { roughness: 0.3 });
+        gun.setLocalPosition(0, -0.85, 0);
+        gunArmPivot.addChild(gun);
+
+        const muzzleFlash = createPrimitive('sphere', 0.4, 0.6, 0.4, MaterialCache.basic(colors.MuzzleFlash, 3.0), false, false);
+        muzzleFlash.setLocalPosition(0, -1.5, 0);
+        muzzleFlash.enabled = false;
+        gunArmPivot.addChild(muzzleFlash);
+
+        group.setLocalScale(Configuration.SoldierScale, Configuration.SoldierScale, Configuration.SoldierScale);
+        group.limbs = { legLeftPivot, legRightPivot, armLeftPivot: null, armRightPivot: gunArmPivot, hasGun: true, isZombie: false, muzzleFlash, shadow: null };
+        return group;
+    }
+
+    static createZombie(isBrute) {
+        const colors = Configuration.Colors;
+        const group = new pc.Entity();
+        const skinColor = isBrute ? colors.BruteSkin : colors.ZombieSkin;
+        const skinMat = MaterialCache.standard(skinColor, { roughness: 0.75 });
+        const shirtMat = MaterialCache.standard(isBrute ? colors.BruteShirt : colors.ZombieShirt, { roughness: 0.8 });
+        const pantsMat = MaterialCache.standard(colors.ZombiePants, { roughness: 0.8 });
+
+        const shadow = createPrimitive('plane', 1.4, 1, 1.4, MaterialCache.shadowBlob(), false, false);
+        shadow.setLocalPosition(0, 0.03, 0);
+        group.addChild(shadow);
+
+        const legLeftPivot = this.createLimbPivot(group, -0.2, 0.78, 0.28, 0.7, 0.3, pantsMat);
+        const legRightPivot = this.createLimbPivot(group, 0.2, 0.78, 0.28, 0.7, 0.3, pantsMat);
+
+        const torso = createPrimitive('box', 0.76, 0.86, 0.46, shirtMat, true, false);
+        torso.setLocalPosition(0, 1.18, 0);
+        torso.setLocalEulerAngles(8, 0, 0);
+        group.addChild(torso);
+
+        const head = createPrimitive('box', 0.56, 0.54, 0.54, skinMat, true, false);
+        head.setLocalPosition(0.04, 1.88, -0.06);
+        head.setLocalEulerAngles(6, 0, 9);
+        group.addChild(head);
+
+        const eyes = createPrimitive('box', 0.38, 0.09, 0.06, MaterialCache.basic(isBrute ? colors.BruteEyes : colors.ZombieEyes, 2.4), false, false);
+        eyes.setLocalPosition(0.04, 1.93, -0.34);
+        group.addChild(eyes);
+
+        if (isBrute) {
+            [-1, 1].forEach(side => {
+                const shoulderSpike = createPrimitive('cone', 0.3, 0.45, 0.3, MaterialCache.standard(0xe0d6c8, { roughness: 0.5 }), false, false);
+                shoulderSpike.setLocalPosition(side * 0.4, 1.72, 0.05);
+                group.addChild(shoulderSpike);
+            });
+        }
+
+        const armLeftPivot = this.createLimbPivot(group, -0.48, 1.52, 0.22, 0.78, 0.22, skinMat);
+        const armRightPivot = this.createLimbPivot(group, 0.48, 1.52, 0.22, 0.78, 0.22, skinMat);
+        armLeftPivot.setLocalEulerAngles(80, 0, 0);
+        armRightPivot.setLocalEulerAngles(80, 0, 0);
+
+        group.limbs = { legLeftPivot, legRightPivot, armLeftPivot, armRightPivot, hasGun: false, isZombie: true, muzzleFlash: null, shadow };
+        return group;
+    }
+
+    static animateRunCycle(humanoidGroup, runPhase, swingAmplitude = 0.7) {
+        const limbs = humanoidGroup.limbs;
+        const swingDeg = Math.sin(runPhase) * swingAmplitude * RAD_TO_DEG;
+        limbs.legLeftPivot.setLocalEulerAngles(swingDeg, 0, 0);
+        limbs.legRightPivot.setLocalEulerAngles(-swingDeg, 0, 0);
+        if (limbs.isZombie) {
+            const armSwayDeg = Math.sin(runPhase * 0.5) * 10;
+            limbs.armLeftPivot.setLocalEulerAngles(80 + armSwayDeg, 0, 0);
+            limbs.armRightPivot.setLocalEulerAngles(80 - armSwayDeg, 0, 0);
+        } else if (!limbs.hasGun && limbs.armLeftPivot) {
+            limbs.armLeftPivot.setLocalEulerAngles(-swingDeg, 0, 0);
+            limbs.armRightPivot.setLocalEulerAngles(swingDeg, 0, 0);
+        }
+    }
+
+    static createCityBlock(styleIndex, roadFacingSign) {
+        switch (styleIndex % 5) {
+            case 0: return this.createTerracedTower(roadFacingSign);
+            case 1: return this.createCylinderGlassTower(roadFacingSign);
+            case 2: return this.createTwinBridgeTowers(roadFacingSign);
+            case 3: return this.createSolarEcoDomedPlaza(roadFacingSign);
+            default: return this.createCommercialMallBlock(roadFacingSign);
+        }
+    }
+
+    static createTerracedTower(roadFacingSign) {
+        // Warm sandstone art-deco stepped skyscraper with deep blue glass & helipad
+        const group = new pc.Entity();
+        const wallMat = MaterialCache.standard(0xd7ccc8);
+        const trimMat = MaterialCache.standard(0xff9800);
+        const glassMat = MaterialCache.basic(0x0288d1, 1.0);
+
+        const tiers = [
+            { w: 18, h: 22, d: 20, y: 11 },
+            { w: 14, h: 20, d: 16, y: 32 },
+            { w: 10, h: 16, d: 12, y: 50 }
+        ];
+        tiers.forEach(t => {
+            const box = createPrimitive('box', t.w, t.h, t.d, wallMat, true, true);
+            box.setLocalPosition(0, t.y, 0);
+            group.addChild(box);
+
+            const ledge = createPrimitive('box', t.w + 0.8, 1.0, t.d + 0.8, trimMat, false, false);
+            ledge.setLocalPosition(0, t.y + t.h / 2, 0);
+            group.addChild(ledge);
+
+            for (let wy = t.y - t.h / 2 + 4; wy < t.y + t.h / 2 - 2; wy += 5) {
+                const band = createPrimitive('box', t.w + 0.2, 2.0, t.d - 2, glassMat, false, false);
+                band.setLocalPosition(0, wy, 0);
+                group.addChild(band);
+            }
+        });
+
+        const pad = createPrimitive('cylinder', 8, 0.5, 8, MaterialCache.standard(0x37474f), false, false);
+        pad.setLocalPosition(0, 58.5, 0);
+        group.addChild(pad);
+        const padRing = createPrimitive('cylinder', 6.5, 0.55, 6.5, MaterialCache.basic(0xffca28, 1.2), false, false);
+        padRing.setLocalPosition(0, 58.52, 0);
+        group.addChild(padRing);
+
+        return group;
+    }
+
+    static createCylinderGlassTower(roadFacingSign) {
+        // Futuristic cylindrical sapphire glass high-rise with steel structural rings
+        const group = new pc.Entity();
+        const height = 68;
+        const glassMat = MaterialCache.standard(0x0288d1);
+        const ringMat = MaterialCache.standard(0x78909c);
+        const core = createPrimitive('cylinder', 15, height, 15, glassMat, true, true);
+        core.setLocalPosition(0, height / 2, 0);
+        group.addChild(core);
+
+        for (let y = 6; y <= height; y += 8) {
+            const ring = createPrimitive('cylinder', 16.2, 1.1, 16.2, ringMat, false, false);
+            ring.setLocalPosition(0, y, 0);
+            group.addChild(ring);
+        }
+
+        const crown = createPrimitive('cone', 12, 14, 12, ringMat, false, false);
+        crown.setLocalPosition(0, height + 7, 0);
+        group.addChild(crown);
+
+        const beacon = createPrimitive('sphere', 1.6, 1.6, 1.6, MaterialCache.basic(0xff1744, 1.8), false, false);
+        beacon.setLocalPosition(0, height + 14.5, 0);
+        group.addChild(beacon);
+        return group;
+    }
+
+    static createTwinBridgeTowers(roadFacingSign) {
+        // Terracotta twin towers linked by a skybridge
+        const group = new pc.Entity();
+        const towerMat = MaterialCache.standard(0xd84315);
+        const trimMat = MaterialCache.standard(0x546e7a);
+        const winMat = MaterialCache.standard(0x263238);
+        const h = 54;
+
+        [-6.5, 6.5].forEach(zOffset => {
+            const t = createPrimitive('box', 14, h, 9, towerMat, true, true);
+            t.setLocalPosition(0, h / 2, zOffset);
+            group.addChild(t);
+
+            for (let y = 6; y < h - 4; y += 6) {
+                const stripe = createPrimitive('box', 14.3, 2.2, 7.2, winMat, false, false);
+                stripe.setLocalPosition(0, y, zOffset);
+                group.addChild(stripe);
+            }
+
+            const cap = createPrimitive('box', 14.8, 1.5, 9.8, trimMat, false, false);
+            cap.setLocalPosition(0, h + 0.75, zOffset);
+            group.addChild(cap);
+        });
+
+        const bridge = createPrimitive('box', 10, 5, 16, trimMat, true, false);
+        bridge.setLocalPosition(0, 34, 0);
+        group.addChild(bridge);
+        const bridgeGlass = createPrimitive('box', 10.4, 2.6, 14, MaterialCache.basic(0x00b0ff, 1.2), false, false);
+        bridgeGlass.setLocalPosition(0, 34, 0);
+        group.addChild(bridgeGlass);
+
+        return group;
+    }
+
+    static createSolarEcoDomedPlaza(roadFacingSign) {
+        // Botanical park + geodesic biosphere dome + wind turbine
+        const group = new pc.Entity();
+        const grassMat = MaterialCache.standard(0x388e3c);
+        const stoneMat = MaterialCache.standard(0x78909c);
+        const domeMat = MaterialCache.standard(0x00acc1, { opacity: 0.78 });
+
+        const base = createPrimitive('box', 20, 3, 24, stoneMat, false, true);
+        base.setLocalPosition(0, 1.5, 0);
+        group.addChild(base);
+
+        const lawn = createPrimitive('box', 18, 0.6, 22, grassMat, false, true);
+        lawn.setLocalPosition(0, 3.3, 0);
+        group.addChild(lawn);
+
+        const dome = createPrimitive('sphere', 14, 12, 14, domeMat, true, false);
+        dome.setLocalPosition(0, 4, -2);
+        group.addChild(dome);
+
+        [[-6, -8], [6, -8], [-6, 8], [6, 8]].forEach(([tx, tz]) => {
+            const trunk = createPrimitive('cylinder', 0.6, 3.5, 0.6, MaterialCache.standard(0x5d4037), false, false);
+            trunk.setLocalPosition(tx, 5.0, tz);
+            group.addChild(trunk);
+            const leaves = createPrimitive('sphere', 3.8, 4.5, 3.8, MaterialCache.standard(0x2e7d32), true, false);
+            leaves.setLocalPosition(tx, 7.8, tz);
+            group.addChild(leaves);
+        });
+
+        const mast = createPrimitive('cylinder', 0.8, 26, 0.8, stoneMat, true, false);
+        mast.setLocalPosition(0, 16, 7);
+        group.addChild(mast);
+        const hub = createPrimitive('sphere', 2.0, 2.0, 2.0, MaterialCache.basic(0x00e676, 1.2), false, false);
+        hub.setLocalPosition(0, 29, 7);
+        group.addChild(hub);
+
+        return group;
+    }
+
+    static createCommercialMallBlock(roadFacingSign) {
+        // Colorful commercial & entertainment complex
+        const group = new pc.Entity();
+        const bodyMat = MaterialCache.standard(0x5c6bc0);
+        const accentMat = MaterialCache.standard(0x311b92);
+        const signCyan = MaterialCache.basic(0x00e5ff, 1.3);
+        const signPink = MaterialCache.basic(0xf50057, 1.3);
+        const signYellow = MaterialCache.basic(0xffb300, 1.3);
+
+        const main = createPrimitive('box', 18, 24, 22, bodyMat, true, true);
+        main.setLocalPosition(0, 12, 0);
+        group.addChild(main);
+
+        const topBlock = createPrimitive('box', 13, 14, 15, accentMat, true, true);
+        topBlock.setLocalPosition(0, 31, -2);
+        group.addChild(topBlock);
+
+        const board1 = createPrimitive('box', 0.5, 7, 14, signPink, false, false);
+        board1.setLocalPosition(roadFacingSign * 9.3, 15, 0);
+        group.addChild(board1);
+
+        const board2 = createPrimitive('box', 0.5, 4.5, 10, signCyan, false, false);
+        board2.setLocalPosition(roadFacingSign * 6.8, 31, -2);
+        group.addChild(board2);
+
+        const awning = createPrimitive('box', 3.5, 0.8, 18, signYellow, false, false);
+        awning.setLocalPosition(roadFacingSign * 10.2, 6, 0);
+        group.addChild(awning);
+
+        return group;
+    }
+
+    static createHoverCar(colorHex, movingForward = true) {
+        const car = new pc.Entity();
+        const bodyMat = MaterialCache.standard(colorHex, { roughness: 0.25, metalness: 0.7 });
+        const cabinMat = MaterialCache.standard(0x111722, { roughness: 0.1, metalness: 0.9 });
+        const thrusterMat = MaterialCache.basic(0x00e5ff, 2.5);
+        const headLightMat = MaterialCache.basic(0xffffff, 2.6);
+        const tailLightMat = MaterialCache.basic(0xff1744, 2.6);
+
+        const chassis = createPrimitive('box', 2.2, 0.65, 4.6, bodyMat, false, false);
+        car.addChild(chassis);
+
+        const cabin = createPrimitive('box', 1.7, 0.55, 2.4, cabinMat, false, false);
+        cabin.setLocalPosition(0, 0.52, -0.2);
+        car.addChild(cabin);
+
+        const underGlow = createPrimitive('box', 1.9, 0.12, 4.0, thrusterMat, false, false);
+        underGlow.setLocalPosition(0, -0.35, 0);
+        car.addChild(underGlow);
+
+        const frontZ = movingForward ? -2.32 : 2.32;
+        const backZ = -frontZ;
+        const headLight = createPrimitive('box', 1.8, 0.2, 0.15, headLightMat, false, false);
+        headLight.setLocalPosition(0, 0.05, frontZ);
+        car.addChild(headLight);
+
+        const tailLight = createPrimitive('box', 1.9, 0.22, 0.15, tailLightMat, false, false);
+        tailLight.setLocalPosition(0, 0.08, backZ);
+        car.addChild(tailLight);
+
+        return car;
+    }
+
+    static createCargoShip() {
+        const ship = new pc.Entity();
+        const hullMat = MaterialCache.standard(0x37474f, { roughness: 0.5, metalness: 0.4 });
+        const deckMat = MaterialCache.standard(0x546e7a, { roughness: 0.6, metalness: 0.3 });
+        const bridgeMat = MaterialCache.standard(0xcfd8dc, { roughness: 0.35, metalness: 0.3 });
+        const neonMat = MaterialCache.basic(0x00e5ff, 2.2);
+
+        const hull = createPrimitive('box', 9, 2.4, 28, hullMat, false, true);
+        ship.addChild(hull);
+
+        const stripe = createPrimitive('box', 9.2, 0.3, 28.2, neonMat, false, false);
+        stripe.setLocalPosition(0, 0.6, 0);
+        ship.addChild(stripe);
+
+        const tower = createPrimitive('box', 6.5, 5.5, 6, bridgeMat, false, false);
+        tower.setLocalPosition(0, 3.6, 8);
+        ship.addChild(tower);
+
+        const containerColors = [0xff5252, 0xffca28, 0x00e676, 0x29b6f6];
+        for (let z = -9; z <= 1; z += 5.2) {
+            const cMat = MaterialCache.standard(containerColors[Math.abs(Math.floor(z)) % containerColors.length], { roughness: 0.45, metalness: 0.3 });
+            const container = createPrimitive('box', 6.8, 2.8, 4.6, cMat, false, false);
+            container.setLocalPosition(0, 2.5, z);
+            ship.addChild(container);
+        }
+        return ship;
+    }
+}
+
+class HazardObstacle {
+    constructor(root, x) {
+        this.hasCollided = false;
+        this.previousZ = Configuration.SpawnZ;
+        this.halfWidth = 3;
+        this.group = new pc.Entity();
+        this.group.setLocalPosition(x, 0.75, Configuration.SpawnZ);
+
+        const hazardMat = MaterialCache.textured('hazardBeam', TextureGenerator.hazardStripes(), {
+            tiling: [3, 1],
+            roughness: 0.4
+        });
+        const barrier = createPrimitive('box', 6, 1.25, 1.3, hazardMat, true, false);
+        this.group.addChild(barrier);
+
+        const footMat = MaterialCache.standard(0x37474f, { roughness: 0.6 });
+        [-2.4, 2.4].forEach(footX => {
+            const foot = createPrimitive('box', 0.8, 0.4, 1.9, footMat, false, false);
+            foot.setLocalPosition(footX, -0.55, 0);
+            this.group.addChild(foot);
+        });
+
+        const warningLightMat = MaterialCache.basic(0xff3b30, 2.6);
+        [-2.75, 2.75].forEach(lightX => {
+            const warningLight = createPrimitive('sphere', 0.34, 0.34, 0.34, warningLightMat, false, false);
+            warningLight.setLocalPosition(lightX, 0.8, 0);
+            this.group.addChild(warningLight);
+        });
+
+        const spikeMaterial = MaterialCache.standard(Configuration.Colors.Spike, { roughness: 0.2 });
+        for (let i = -2; i <= 2; i++) {
+            const spike = createPrimitive('cone', 0.6, 1.1, 0.6, spikeMaterial, false, false);
+            spike.setLocalPosition(i * 1.2, 1.15, 0);
+            this.group.addChild(spike);
+        }
+        root.addChild(this.group);
+    }
+
+    update(frameScale) {
+        const pos = this.group.getLocalPosition();
+        this.previousZ = pos.z;
+        const nextZ = pos.z + Configuration.WorldSpeed * frameScale;
+        this.group.setLocalPosition(pos.x, pos.y, nextZ);
+        return nextZ > Configuration.DespawnZ;
+    }
+
+    remove() {
+        this.group.destroy();
+    }
+}
+
+class BuffEntity {
+    constructor(app, x, hits, rewardSoldiers = 1) {
+        this.app = app;
+        this.isDestroyed = false;
+        this.hits = hits;
+        this.initialHits = hits;
+        this.rewardSoldiers = rewardSoldiers;
+        this.halfWidth = 2.4;
+        this.hitPulseSeconds = 0;
+        this.spinAngle = Math.random() * 360;
+        this.displayedHits = null;
+
+        this.group = new pc.Entity();
+        this.group.setLocalPosition(x, 0, Configuration.SpawnZ + 5);
+
+        this.barrel = new pc.Entity();
+        this.barrel.setLocalPosition(0, 1.6, 0);
+        this.group.addChild(this.barrel);
+
+        const barrelMat = MaterialCache.textured('barrelBody', TextureGenerator.barrel(), { roughness: 0.35 });
+        const body = createPrimitive('cylinder', 2.6, 3.2, 2.6, barrelMat, true, false);
+        this.barrel.addChild(body);
+
+        const rimMat = MaterialCache.standard(0x5d4037, { roughness: 0.4 });
+        [-1.6, 1.6].forEach(rimY => {
+            const rim = createPrimitive('cylinder', 2.78, 0.22, 2.78, rimMat, false, false);
+            rim.setLocalPosition(0, rimY, 0);
+            this.barrel.addChild(rim);
+        });
+
+        this.groundRing = createTorusEntity(MaterialCache.basic(Configuration.Colors.BarrelGlow, 1.8));
+        this.groundRing.setLocalPosition(0, 0.12, 0);
+        this.groundRing.setLocalScale(0.6, 0.3, 0.6);
+        this.group.addChild(this.groundRing);
+
+        this.label = createCanvasLabel(app, 512, 256, 6, 3, 75);
+        this.label.entity.setLocalPosition(0, 5.2, 0);
+        this.group.addChild(this.label.entity);
+        this.drawLabel();
+        app.root.addChild(this.group);
+    }
+
+    drawLabel() {
+        const remainingHits = Math.max(0, Math.ceil(this.hits));
+        if (this.displayedHits === remainingHits) return;
+        this.displayedHits = remainingHits;
+        const context = this.label.context;
+        context.clearRect(0, 0, 512, 256);
+
+        traceRoundedRect(context, 96, 18, 320, 130, 34);
+        const panelGradient = context.createLinearGradient(0, 18, 0, 148);
+        panelGradient.addColorStop(0, '#ffe27a');
+        panelGradient.addColorStop(1, '#f08c00');
+        context.fillStyle = panelGradient;
+        context.fill();
+        context.lineWidth = 10;
+        context.strokeStyle = '#0a1426';
+        context.stroke();
+        drawOutlinedText(context, `+${this.rewardSoldiers}`, 256, 86, 104, '#ffffff', 16);
+
+        const barX = 116;
+        const barY = 170;
+        const barWidth = 280;
+        const barHeight = 56;
+        traceRoundedRect(context, barX, barY, barWidth, barHeight, 22);
+        context.fillStyle = '#10213d';
+        context.fill();
+        context.lineWidth = 8;
+        context.strokeStyle = '#0a1426';
+        context.stroke();
+        const fillFraction = this.initialHits > 0 ? remainingHits / this.initialHits : 0;
+        if (fillFraction > 0) {
+            traceRoundedRect(context, barX + 6, barY + 6, Math.max(24, (barWidth - 12) * fillFraction), barHeight - 12, 16);
+            context.fillStyle = '#ff5a4e';
+            context.fill();
+        }
+        drawOutlinedText(context, String(remainingHits), 256, barY + barHeight / 2 + 2, 46, '#ffffff', 10);
+        this.label.texture.upload();
+    }
+
+    update(frameScale, deltaSeconds) {
+        this.spinAngle += 0.9 * frameScale;
+        this.hitPulseSeconds = Math.max(0, this.hitPulseSeconds - deltaSeconds);
+        const pulseScale = 1 + this.hitPulseSeconds * 2.5;
+        this.barrel.setLocalScale(pulseScale, pulseScale, pulseScale);
+        this.barrel.setLocalEulerAngles(0, this.spinAngle, 0);
+
+        const pos = this.group.getLocalPosition();
+        const nextZ = pos.z + Configuration.WorldSpeed * frameScale;
+        this.group.setLocalPosition(pos.x, 0, nextZ);
+        return nextZ > Configuration.DespawnZ;
+    }
+
+    registerHit(damage = 1) {
+        this.hits -= damage;
+        this.hitPulseSeconds = 0.08;
+        this.drawLabel();
+        return this.hits <= 0;
+    }
+
+    remove() {
+        this.group.destroy();
+        destroyCanvasLabel(this.label);
+    }
+}
+
+class GateWall {
+    static isSpecPositive(spec) {
+        return spec.operation === 'multiply' ? spec.value >= 1 : spec.value >= 0;
+    }
+
+    static describeSpec(spec) {
+        if (spec.operation === 'multiply') return `x${spec.value}`;
+        return spec.value >= 0 ? `+${spec.value}` : `${spec.value}`;
+    }
+
+    constructor(app, leftSpec, rightSpec) {
+        this.app = app;
+        this.isDestroyed = false;
+        this.z = Configuration.SpawnZ;
+        this.previousZ = this.z;
+        this.group = new pc.Entity();
+        this.group.setLocalPosition(0, 0, this.z);
+
+        const colors = Configuration.Colors;
+        this.materials = {
+            goodGlass: MaterialCache.standard(colors.GateGood, { opacity: 0.5, emissive: colors.GateGood, emissiveIntensity: 0.55, roughness: 0.2 }),
+            badGlass: MaterialCache.standard(colors.GateBad, { opacity: 0.5, emissive: colors.GateBad, emissiveIntensity: 0.55, roughness: 0.2 }),
+            goodBar: MaterialCache.standard(colors.GateGoodDeep, { emissive: colors.GateGood, emissiveIntensity: 0.35, roughness: 0.35 }),
+            badBar: MaterialCache.standard(colors.GateBadDeep, { emissive: colors.GateBad, emissiveIntensity: 0.35, roughness: 0.35 })
+        };
+
+        const halfRoad = Configuration.RoadWidth / 2;
+        const postMat = MaterialCache.standard(colors.GatePost, { roughness: 0.3 });
+        [-halfRoad, 0, halfRoad].forEach(postX => {
+            const post = createPrimitive('box', 0.55, 5.4, 0.55, postMat, true, false);
+            post.setLocalPosition(postX, 2.7, 0);
+            this.group.addChild(post);
+            const postCap = createPrimitive('box', 0.8, 0.4, 0.8, postMat, false, false);
+            postCap.setLocalPosition(postX, 5.55, 0);
+            this.group.addChild(postCap);
+        });
+
+        this.panels = [leftSpec, rightSpec].map((spec, index) =>
+            this.createPanel(spec, (index === 0 ? -1 : 1) * halfRoad / 2, halfRoad - 0.55));
+        app.root.addChild(this.group);
+    }
+
+    createPanel(spec, centerX, panelWidth) {
+        const glass = createPrimitive('box', panelWidth, 4.6, 0.12, this.materials.goodGlass, false, false);
+        glass.setLocalPosition(centerX, 2.5, 0);
+        this.group.addChild(glass);
+
+        const topBar = createPrimitive('box', panelWidth, 0.6, 0.6, this.materials.goodBar, false, false);
+        topBar.setLocalPosition(centerX, 5.1, 0);
+        this.group.addChild(topBar);
+
+        const label = createCanvasLabel(this.app, 256, 128, 4.6, 2.3);
+        label.entity.setLocalPosition(centerX, 2.7, 0.2);
+        this.group.addChild(label.entity);
+
+        const panel = { centerX, spec: { ...spec }, hitProgress: 0, glass, topBar, label, isPositive: null, pulseSeconds: 0 };
+        this.refreshPanel(panel);
+        return panel;
+    }
+
+    refreshPanel(panel) {
+        const isPositive = GateWall.isSpecPositive(panel.spec);
+        if (panel.isPositive !== isPositive) {
+            panel.isPositive = isPositive;
+            panel.glass.render.material = isPositive ? this.materials.goodGlass : this.materials.badGlass;
+            panel.topBar.render.material = isPositive ? this.materials.goodBar : this.materials.badBar;
+        }
+        const context = panel.label.context;
+        context.clearRect(0, 0, 256, 128);
+        drawOutlinedText(context, GateWall.describeSpec(panel.spec), 128, 68, 92, '#ffffff', 14);
+        panel.label.texture.upload();
+    }
+
+    getPanelIndexForX(x) {
+        return x < 0 ? 0 : 1;
+    }
+
+    registerHit(panelIndex) {
+        const panel = this.panels[panelIndex];
+        panel.pulseSeconds = 0.06;
+        if (panel.spec.operation !== 'add') return false;
+        panel.hitProgress++;
+        if (panel.hitProgress < Configuration.GateHitsPerValueStep) return false;
+        panel.hitProgress = 0;
+        panel.spec.value++;
+        panel.pulseSeconds = 0.12;
+        this.refreshPanel(panel);
+        return true;
+    }
+
+    update(frameScale, deltaSeconds) {
+        this.previousZ = this.z;
+        this.z += Configuration.WorldSpeed * frameScale;
+        this.group.setLocalPosition(0, 0, this.z);
+        this.panels.forEach(panel => {
+            panel.pulseSeconds = Math.max(0, panel.pulseSeconds - deltaSeconds);
+            const pulseScale = 1 + panel.pulseSeconds * 2.2;
+            panel.label.entity.setLocalScale(4.6 * pulseScale, 1, 2.3 * pulseScale);
+        });
+        return this.z > Configuration.DespawnZ;
+    }
+
+    remove() {
+        this.group.destroy();
+        this.panels.forEach(panel => destroyCanvasLabel(panel.label));
+    }
+}
+
+class RoadSegment {
+    constructor(root, zPosition) {
+        this.group = new pc.Entity();
+        this.group.setLocalPosition(0, 0, zPosition);
+        const length = Configuration.SegmentLength;
+        const colors = Configuration.Colors;
+        const halfRoad = Configuration.RoadWidth / 2;
+        const curbWidth = 1.3;
+
+        const roadMat = MaterialCache.textured('roadAsphalt', TextureGenerator.asphalt(), { tiling: [1, 6], roughness: 0.62 });
+        const road = createPrimitive('box', Configuration.RoadWidth + 2, 1.4, length, roadMat, true, true);
+        road.setLocalPosition(0, -0.7, 0);
+        this.group.addChild(road);
+
+        const girderMat = MaterialCache.standard(0x3c4a57, { roughness: 0.5 });
+        const underGirder = createPrimitive('box', Configuration.RoadWidth + 1, 1.6, length, girderMat, true, true);
+        underGirder.setLocalPosition(0, -2.1, 0);
+        this.group.addChild(underGirder);
+
+        const curbMat = MaterialCache.textured('curbStripes', TextureGenerator.curbStripes(), { tiling: [1, 15], roughness: 0.5 });
+        const railMat = MaterialCache.standard(0xeef2f6, { roughness: 0.3 });
+        const steelMat = MaterialCache.standard(colors.Steel, { roughness: 0.4 });
+        const concreteMat = MaterialCache.standard(colors.Concrete, { roughness: 0.55 });
+        const concreteDarkMat = MaterialCache.standard(colors.ConcreteDark, { roughness: 0.55 });
+        const towerMat = MaterialCache.standard(colors.BridgeOrange, { roughness: 0.42 });
+        const towerDeepMat = MaterialCache.standard(colors.BridgeOrangeDeep, { roughness: 0.42 });
+        const lampMat = MaterialCache.basic(colors.LampGlow, 1.8);
+        const beaconMat = MaterialCache.basic(0xff3b30, 2.4);
+        const foamMat = MaterialCache.standard(0xffffff, { emissive: 0xe0f7fa, emissiveIntensity: 0.5, opacity: 0.8 });
+
+        const towerTopY = 20;
+        const deckAnchorY = 1.25;
+        const cableReachZ = length / 2 - 0.5;
+
+        [-1, 1].forEach(side => {
+            const curbX = side * (halfRoad + curbWidth / 2);
+            const railX = curbX + side * 0.3;
+            const outerX = side * (halfRoad + curbWidth + 0.9);
+
+            const curb = createPrimitive('box', curbWidth, 0.85, length, curbMat, true, true);
+            curb.setLocalPosition(curbX, 0.42, 0);
+            this.group.addChild(curb);
+
+            const topRail = createPrimitive('box', 0.2, 0.18, length, railMat, false, false);
+            topRail.setLocalPosition(railX, 1.25, 0);
+            this.group.addChild(topRail);
+
+            for (let z = -length / 2 + 5; z < length / 2; z += 10) {
+                const post = createPrimitive('box', 0.2, 0.7, 0.2, steelMat, false, false);
+                post.setLocalPosition(railX, 0.95, z);
+                this.group.addChild(post);
+            }
+
+            const edgeGirder = createPrimitive('box', 1.4, 1.0, length, concreteDarkMat, false, true);
+            edgeGirder.setLocalPosition(outerX, 0.1, 0);
+            this.group.addChild(edgeGirder);
+
+            [-15, 15].forEach(pierZ => {
+                const pierColumn = createPrimitive('box', 3.6, 6.2, 5.2, concreteMat, false, true);
+                pierColumn.setLocalPosition(outerX, -2.2, pierZ);
+                this.group.addChild(pierColumn);
+                const foamRing = createPrimitive('box', 4.6, 0.18, 6.4, foamMat, false, false);
+                foamRing.setLocalPosition(outerX, -4.0, pierZ);
+                this.group.addChild(foamRing);
+            });
+
+            [-25, -10, 10, 25].forEach(lampZ => {
+                const pole = createPrimitive('cylinder', 0.22, 6.5, 0.22, steelMat, false, false);
+                pole.setLocalPosition(railX, 0.85 + 3.25, lampZ);
+                this.group.addChild(pole);
+                const arm = createPrimitive('box', 1.8, 0.16, 0.16, steelMat, false, false);
+                arm.setLocalPosition(railX - side * 0.9, 7.05, lampZ);
+                this.group.addChild(arm);
+                const lampHead = createPrimitive('box', 0.7, 0.22, 0.4, lampMat, false, false);
+                lampHead.setLocalPosition(railX - side * 1.7, 6.92, lampZ);
+                this.group.addChild(lampHead);
+            });
+
+            const towerBase = createPrimitive('box', 3.6, 1.6, 3.6, concreteMat, false, true);
+            towerBase.setLocalPosition(outerX, -3.4, 0);
+            this.group.addChild(towerBase);
+            const towerFoam = createPrimitive('box', 4.6, 0.18, 4.6, foamMat, false, false);
+            towerFoam.setLocalPosition(outerX, -4.0, 0);
+            this.group.addChild(towerFoam);
+
+            const towerColumn = createPrimitive('box', 1.7, 24, 1.7, towerMat, true, false);
+            towerColumn.setLocalPosition(outerX, 8.25, 0);
+            this.group.addChild(towerColumn);
+            [7, 14].forEach(bandY => {
+                const band = createPrimitive('box', 2.3, 0.7, 2.3, towerDeepMat, false, false);
+                band.setLocalPosition(outerX, bandY, 0);
+                this.group.addChild(band);
+            });
+            const towerCap = createPrimitive('box', 2.5, 0.9, 2.5, towerDeepMat, false, false);
+            towerCap.setLocalPosition(outerX, 20.6, 0);
+            this.group.addChild(towerCap);
+            const beacon = createPrimitive('sphere', 0.7, 0.7, 0.7, beaconMat, false, false);
+            beacon.setLocalPosition(outerX, 21.4, 0);
+            this.group.addChild(beacon);
+
+            [-1, 1].forEach(direction => {
+                const endZ = direction * cableReachZ;
+                const deltaY = deckAnchorY - towerTopY;
+                const cableLength = Math.hypot(deltaY, endZ);
+                const cable = createPrimitive('box', 0.24, 0.24, cableLength, towerMat, true, false);
+                cable.setLocalPosition(outerX, (towerTopY + deckAnchorY) / 2, endZ / 2);
+                cable.setLocalEulerAngles(Math.atan2(-deltaY, endZ) * RAD_TO_DEG, 0, 0);
+                this.group.addChild(cable);
+
+                [5, 10, 15, 20, 25].forEach(distanceFromTower => {
+                    const cableY = towerTopY + deltaY * (distanceFromTower / cableReachZ);
+                    const hangerHeight = cableY - 0.6;
+                    const hanger = createPrimitive('box', 0.08, hangerHeight, 0.08, towerMat, false, false);
+                    hanger.setLocalPosition(outerX, 0.6 + hangerHeight / 2, direction * distanceFromTower);
+                    this.group.addChild(hanger);
+                });
+            });
+        });
+
+        root.addChild(this.group);
+    }
+
+    update(frameScale) {
+        const pos = this.group.getLocalPosition();
+        let nextZ = pos.z + Configuration.WorldSpeed * frameScale;
+        if (nextZ > Configuration.SegmentLength) {
+            nextZ -= Configuration.SegmentLength * Configuration.SegmentCount;
+        }
+        this.group.setLocalPosition(pos.x, pos.y, nextZ);
+    }
+}
+
+class OceanScenery {
+    constructor(root) {
+        this.items = [];
+        this.minZ = -360;
+        this.maxZ = 70;
+        const waterLevelY = -4.1;
+        const placements = [
+            { kind: 'island', x: -62, z: -40, scale: 1.0, hasLighthouse: true },
+            { kind: 'island', x: 78, z: -150, scale: 1.3, hasLighthouse: false },
+            { kind: 'island', x: -95, z: -240, scale: 1.6, hasLighthouse: false },
+            { kind: 'island', x: 60, z: -320, scale: 0.9, hasLighthouse: true },
+            { kind: 'ship', x: 40, z: -100, driftPerFrame: 0.1 },
+            { kind: 'ship', x: -42, z: -290, driftPerFrame: -0.06 }
+        ];
+        placements.forEach(placement => {
+            const isIsland = placement.kind === 'island';
+            const entity = isIsland
+                ? OceanScenery.createIsland(placement.scale, placement.hasLighthouse)
+                : HytaleModelFactory.createCargoShip();
+            const y = isIsland ? waterLevelY : waterLevelY + 0.8;
+            entity.setLocalPosition(placement.x, y, placement.z);
+            root.addChild(entity);
+            this.items.push({ entity, x: placement.x, y, z: placement.z, driftPerFrame: placement.driftPerFrame || 0 });
+        });
+    }
+
+    static createIsland(scale, hasLighthouse) {
+        const island = new pc.Entity();
+        const lagoon = createPrimitive('cylinder', 32, 0.2, 26, MaterialCache.standard(0x6fe3ea, { opacity: 0.55, roughness: 0.2 }), false, false);
+        lagoon.setLocalPosition(0, 0.05, 0);
+        island.addChild(lagoon);
+
+        const sand = createPrimitive('cylinder', 26, 2.2, 20, MaterialCache.standard(0xf3d79b, { roughness: 0.8 }), false, false);
+        sand.setLocalPosition(0, 0.4, 0);
+        island.addChild(sand);
+
+        const hill = createPrimitive('sphere', 16, 8, 12, MaterialCache.standard(0x58b84f, { roughness: 0.8 }), false, false);
+        hill.setLocalPosition(-2, 1.4, 1);
+        island.addChild(hill);
+        const smallHill = createPrimitive('sphere', 9, 5.5, 8, MaterialCache.standard(0x6cc95f, { roughness: 0.8 }), false, false);
+        smallHill.setLocalPosition(6, 1.2, -3);
+        island.addChild(smallHill);
+
+        const trunkMat = MaterialCache.standard(0x9c7a54, { roughness: 0.8 });
+        const crownMat = MaterialCache.standard(0x3fa34d, { roughness: 0.7 });
+        [[-8, 4], [8, 5], [3, -7]].forEach(([palmX, palmZ]) => {
+            const trunk = createPrimitive('cylinder', 0.6, 6, 0.6, trunkMat, false, false);
+            trunk.setLocalPosition(palmX, 4.5, palmZ);
+            trunk.setLocalEulerAngles(0, 0, 8);
+            island.addChild(trunk);
+            const crown = createPrimitive('sphere', 4.4, 1.3, 4.4, crownMat, false, false);
+            crown.setLocalPosition(palmX - 0.4, 7.6, palmZ);
+            island.addChild(crown);
+        });
+
+        if (hasLighthouse) {
+            const lighthouseX = -7;
+            const lighthouseZ = -3;
+            const tower = createPrimitive('cylinder', 2.2, 11, 2.2, MaterialCache.standard(0xffffff, { roughness: 0.4 }), false, false);
+            tower.setLocalPosition(lighthouseX, 7, lighthouseZ);
+            island.addChild(tower);
+            const stripeMat = MaterialCache.standard(0xe53935, { roughness: 0.4 });
+            [4, 8].forEach(stripeY => {
+                const stripe = createPrimitive('cylinder', 2.3, 1.4, 2.3, stripeMat, false, false);
+                stripe.setLocalPosition(lighthouseX, stripeY, lighthouseZ);
+                island.addChild(stripe);
+            });
+            const lamp = createPrimitive('sphere', 1.6, 1.6, 1.6, MaterialCache.basic(0xfff1a8, 2.4), false, false);
+            lamp.setLocalPosition(lighthouseX, 13, lighthouseZ);
+            island.addChild(lamp);
+            const roof = createPrimitive('cone', 2.8, 1.8, 2.8, stripeMat, false, false);
+            roof.setLocalPosition(lighthouseX, 14.6, lighthouseZ);
+            island.addChild(roof);
+        }
+
+        island.setLocalScale(scale, scale, scale);
+        return island;
+    }
+
+    update(frameScale, worldSpeedScale) {
+        const wrapLength = this.maxZ - this.minZ;
+        this.items.forEach(item => {
+            item.z += (Configuration.WorldSpeed * worldSpeedScale + item.driftPerFrame) * frameScale;
+            if (item.z > this.maxZ) item.z -= wrapLength;
+            if (item.z < this.minZ) item.z += wrapLength;
+            item.entity.setLocalPosition(item.x, item.y, item.z);
+        });
+    }
+}
+
+class BulletPool {
+    constructor(root) {
+        this.root = root;
+        this.outerMaterial = MaterialCache.basic(Configuration.Colors.Bullet, 2.4);
+        this.coreMaterial = MaterialCache.basic(Configuration.Colors.BulletCore, 3.0);
+        this.idleEntities = [];
+        this.liveBullets = [];
+    }
+
+    spawn(x, y, z, damage = 1) {
+        let entity = this.idleEntities.pop();
+        if (!entity) {
+            entity = new pc.Entity();
+            const outer = createPrimitive('box', 0.22, 0.22, 1.6, this.outerMaterial, false, false);
+            const core = createPrimitive('box', 0.1, 0.1, 1.75, this.coreMaterial, false, false);
+            entity.addChild(outer);
+            entity.addChild(core);
+            this.root.addChild(entity);
+        }
+        entity.enabled = true;
+        entity.setLocalPosition(x, y, z);
+        this.liveBullets.push({ entity, x, y, z, previousZ: z, damage, isSpent: false });
+    }
+
+    update(frameScale) {
+        this.liveBullets.forEach(bullet => {
+            bullet.previousZ = bullet.z;
+            bullet.z -= Configuration.ProjectileSpeed * frameScale;
+            bullet.entity.setLocalPosition(bullet.x, bullet.y, bullet.z);
+            if (bullet.z < Configuration.BulletMaxZ) bullet.isSpent = true;
+        });
+    }
+
+    releaseSpent() {
+        this.liveBullets = this.liveBullets.filter(bullet => {
+            if (!bullet.isSpent) return true;
+            bullet.entity.enabled = false;
+            this.idleEntities.push(bullet.entity);
+            return false;
+        });
+    }
+
+    releaseAll() {
+        this.liveBullets.forEach(bullet => bullet.isSpent = true);
+        this.releaseSpent();
+    }
+}
+
+class ParticleSystem {
+    constructor(root) {
+        this.root = root;
+        this.idleEntities = [];
+        this.liveParticles = [];
+        this.idleRings = [];
+        this.liveRings = [];
+    }
+
+    burst(position, color, count, speed = 0.35) {
+        const mat = MaterialCache.basic(color, 2.0);
+        for (let i = 0; i < count && this.liveParticles.length < Configuration.MaxLiveParticles; i++) {
+            let entity = this.idleEntities.pop();
+            if (!entity) {
+                entity = createPrimitive('box', 0.35, 0.35, 0.35, mat, false, false);
+                this.root.addChild(entity);
+            } else {
+                entity.render.material = mat;
+            }
+            entity.enabled = true;
+            entity.setLocalPosition(position.x, position.y, position.z);
+            entity.setLocalScale(0.35, 0.35, 0.35);
+
+            const vx = (Math.random() - 0.5) * 2 * speed;
+            const vy = (Math.random() * 1.5 + 0.3) * speed;
+            const vz = (Math.random() - 0.5) * 2 * speed;
+            const lifeSeconds = 0.45 + Math.random() * 0.4;
+            this.liveParticles.push({
+                entity,
+                x: position.x,
+                y: position.y,
+                z: position.z,
+                vx,
+                vy,
+                vz,
+                rotX: Math.random() * 360,
+                rotY: Math.random() * 360,
+                lifeSeconds,
+                initialLifeSeconds: lifeSeconds
+            });
+        }
+    }
+
+    shockwave(position, color, maxScale = 5.5) {
+        const mat = MaterialCache.basic(color, 2.4);
+        let ring = this.idleRings.pop();
+        if (!ring) {
+            ring = createTorusEntity(mat);
+            this.root.addChild(ring);
+        } else {
+            ring.render.meshInstances[0].material = mat;
+        }
+        ring.enabled = true;
+        ring.setLocalPosition(position.x, Math.max(0.25, position.y), position.z);
+        ring.setLocalEulerAngles(0, 0, 0);
+        ring.setLocalScale(0.2, 0.2, 0.2);
+        this.liveRings.push({ entity: ring, z: position.z, life: 0.32, maxLife: 0.32, maxScale });
+    }
+
+    update(frameScale, deltaSeconds) {
+        this.liveParticles = this.liveParticles.filter(particle => {
+            particle.lifeSeconds -= deltaSeconds;
+            if (particle.lifeSeconds <= 0) {
+                particle.entity.enabled = false;
+                this.idleEntities.push(particle.entity);
+                return false;
+            }
+            particle.vy -= 0.03 * frameScale;
+            particle.x += particle.vx * frameScale;
+            particle.y += particle.vy * frameScale;
+            particle.z += particle.vz * frameScale + Configuration.WorldSpeed * frameScale;
+            if (particle.y < 0.1) {
+                particle.y = 0.1;
+                particle.vy *= -0.4;
+            }
+            particle.rotX += 0.22 * frameScale * RAD_TO_DEG;
+            particle.rotY += 0.18 * frameScale * RAD_TO_DEG;
+            const s = 0.35 * (particle.lifeSeconds / particle.initialLifeSeconds);
+            particle.entity.setLocalPosition(particle.x, particle.y, particle.z);
+            particle.entity.setLocalEulerAngles(particle.rotX, particle.rotY, 0);
+            particle.entity.setLocalScale(s, s, s);
+            return true;
+        });
+
+        this.liveRings = this.liveRings.filter(r => {
+            r.life -= deltaSeconds;
+            if (r.life <= 0) {
+                r.entity.enabled = false;
+                this.idleRings.push(r.entity);
+                return false;
+            }
+            r.z += Configuration.WorldSpeed * frameScale;
+            const progress = 1 - r.life / r.maxLife;
+            const scale = 0.2 + progress * r.maxScale;
+            const pos = r.entity.getLocalPosition();
+            r.entity.setLocalPosition(pos.x, pos.y, r.z);
+            r.entity.setLocalScale(scale, 0.25 * (1 - progress), scale);
+            return true;
+        });
+    }
+
+    clear() {
+        this.liveParticles.forEach(particle => {
+            particle.entity.enabled = false;
+            this.idleEntities.push(particle.entity);
+        });
+        this.liveParticles = [];
+        this.liveRings.forEach(r => {
+            r.entity.enabled = false;
+            this.idleRings.push(r.entity);
+        });
+        this.liveRings = [];
+    }
+}
+
+const HighScoreStorage = {
+    storageKey: 'bridge-defense-high-score',
+    read() {
+        try { return Number(localStorage.getItem(this.storageKey)) || 0; } catch { return 0; }
+    },
+    write(value) {
+        try { localStorage.setItem(this.storageKey, String(value)); } catch { }
+    }
+};
+
+class GameEngine {
+    constructor() {
+        this.sound = new SoundBoard();
+        this.ui = this.collectUiElements();
+        this.hudCache = {};
+        this.highScore = HighScoreStorage.read();
+        this.initScene();
+        this.initWorld();
+
+        this.platoon = new pc.Entity('platoon');
+        this.app.root.addChild(this.platoon);
+
+        this.crowdShadow = createPrimitive('plane', 1, 1, 1, MaterialCache.shadowBlob(), false, false);
+        this.platoon.addChild(this.crowdShadow);
+
+        this.crowdCountLabel = createCanvasLabel(this.app, 256, 128, 3.2, 1.6, 70);
+        this.crowdCountLabel.entity.setLocalPosition(0, 3.3, 0);
+        this.platoon.addChild(this.crowdCountLabel.entity);
+
+        this.platoonLight = new pc.Entity('platoonLight');
+        this.platoonLight.addComponent('light', {
+            type: 'point',
+            color: new pc.Color(1.0, 0.82, 0.5),
+            intensity: 1.2,
+            range: 20,
+            castShadows: false
+        });
+        this.platoonLight.setLocalPosition(0, 3.2, -2.5);
+        this.platoon.addChild(this.platoonLight);
+
+        this.soldiers = [];
+        this.enemies = [];
+        this.buffs = [];
+        this.hazards = [];
+        this.gates = [];
+        this.bullets = new BulletPool(this.app.root);
+        this.particles = new ParticleSystem(this.app.root);
+        this.input = {
+            pressedKeys: new Set(),
+            isTouchLeft: false,
+            isTouchRight: false,
+            jumpRequestedAtSeconds: -Infinity,
+            dragPointerId: null,
+            dragStartClientX: 0,
+            dragStartPlatoonX: 0,
+            dragTargetX: null
+        };
+        this.clockSeconds = 0;
+        this.cameraShakeIntensity = 0;
+        this.muzzleFlashTimer = 0;
+        this.volleyIndex = 0;
+        this.crowdRadius = 0;
+        this.cameraZoomRadius = 0;
+        this.state = 'menu';
+        this.resetRun();
+        this.initControls();
+        this.ui.startBest.innerText = this.highScore ? `🏆 RECORDE: ${this.highScore}` : '';
+        this.ui.loadingScreen.style.display = 'none';
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => {
+                this.hudCache.crowdBadge = undefined;
+                this.refreshHud();
+            });
+        }
+
+        this.app.on('update', dt => this.loop(dt));
+    }
+
+    collectUiElements() {
+        const byId = id => document.getElementById(id);
+        return {
+            loadingScreen: byId('loading-screen'),
+            score: byId('score-label'),
+            level: byId('level-label'),
+            time: byId('time-label'),
+            soldiers: byId('soldier-label'),
+            levelProgressFill: byId('level-progress-fill'),
+            lives: byId('lives-label'),
+            combo: byId('combo-label'),
+            damageFlash: byId('damage-flash'),
+            levelAlert: byId('level-alert'),
+            toastAlert: byId('toast-alert'),
+            startModal: byId('start-modal'),
+            startBest: byId('start-best-label'),
+            pauseModal: byId('pause-modal'),
+            gameOverModal: byId('game-over-modal'),
+            finalScore: byId('final-score-label'),
+            finalTime: byId('final-time-label'),
+            finalLevel: byId('final-level-label'),
+            finalBest: byId('final-best-label'),
+            newRecord: byId('new-record-label'),
+            muteButton: byId('btn-mute')
+        };
+    }
+
+    initScene() {
+        const canvas = document.getElementById('game-canvas');
+        this.app = new pc.Application(canvas, {
+            graphicsDeviceOptions: { antialias: true, powerPreference: 'high-performance' }
+        });
+        this.app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
+        this.app.setCanvasResolution(pc.RESOLUTION_AUTO);
+        window.addEventListener('resize', () => this.app.resizeCanvas());
+
+        TextureGenerator.init(this.app);
+
+        const fogColor = hexToColor(0xa9def5);
+        this.app.scene.toneMapping = pc.TONEMAP_ACES;
+        this.app.scene.exposure = 1.12;
+        this.app.scene.gammaCorrection = pc.GAMMA_SRGB;
+        this.app.scene.fog = pc.FOG_LINEAR;
+        this.app.scene.fogStart = 70;
+        this.app.scene.fogEnd = 190;
+        this.app.scene.fogColor = fogColor;
+        this.app.scene.ambientLight = new pc.Color(0.56, 0.62, 0.7);
+
+        this.camera = new pc.Entity('camera');
+        this.camera.addComponent('camera', {
+            clearColor: fogColor,
+            fov: 55,
+            nearClip: 0.1,
+            farClip: 1000
+        });
+        this.cameraBasePosition = new pc.Vec3(0, 22, 26);
+        this.cameraLookTarget = new pc.Vec3(0, 1, -34);
+        this.cameraCurrentX = 0;
+        this.camera.setLocalPosition(this.cameraBasePosition);
+        this.camera.lookAt(this.cameraLookTarget);
+        this.app.root.addChild(this.camera);
+
+        this.waterBaseMat = MaterialCache.textured('oceanBase', TextureGenerator.waterGrid(), {
+            tiling: [24, 14],
+            roughness: 0.12,
+            emissive: 0xffffff,
+            emissiveIntensity: 0.18
+        });
+        this.waterBaseMat.specular = new pc.Color(0.18, 0.24, 0.28);
+        this.waterBaseMat.update();
+
+        const oceanPlane = createPrimitive('plane', 900, 1, 520, this.waterBaseMat, false, true);
+        oceanPlane.setLocalPosition(0, -4.1, -110);
+        this.app.root.addChild(oceanPlane);
+
+        this.waterOverlayMat = new pc.StandardMaterial();
+        this.waterOverlayMat.diffuse = hexToColor(0x7fe3ff);
+        this.waterOverlayMat.diffuseMap = TextureGenerator.waterGrid();
+        this.waterOverlayMat.diffuseMapTiling = new pc.Vec2(38, 22);
+        this.waterOverlayMat.opacity = 0.3;
+        this.waterOverlayMat.blendType = pc.BLEND_NORMAL;
+        this.waterOverlayMat.gloss = 0.55;
+        this.waterOverlayMat.specular = new pc.Color(0.2, 0.26, 0.3);
+        this.waterOverlayMat.update();
+
+        const oceanWaveLayer = createPrimitive('plane', 900, 1, 520, this.waterOverlayMat, false, false);
+        oceanWaveLayer.setLocalPosition(0, -3.95, -110);
+        this.app.root.addChild(oceanWaveLayer);
+        this.waterOffset = new pc.Vec2(0, 0);
+        this.waterOverlayOffset = new pc.Vec2(0, 0);
+
+        const sun = new pc.Entity('sun');
+        sun.addComponent('light', {
+            type: 'directional',
+            color: new pc.Color(1.0, 0.95, 0.85),
+            intensity: 1.5,
+            castShadows: true,
+            shadowBias: 0.18,
+            normalOffsetBias: 0.05,
+            shadowResolution: 2048,
+            shadowDistance: 200
+        });
+        sun.setLocalPosition(60, 110, 50);
+        sun.lookAt(0, 0, -40);
+        this.app.root.addChild(sun);
+
+        const rimLight = new pc.Entity('rimLight');
+        rimLight.addComponent('light', {
+            type: 'directional',
+            color: new pc.Color(0.55, 0.8, 1.0),
+            intensity: 0.5,
+            castShadows: false
+        });
+        rimLight.setLocalPosition(-60, 65, -120);
+        rimLight.lookAt(0, 0, 0);
+        this.app.root.addChild(rimLight);
+
+        this.app.start();
+    }
+
+    initWorld() {
+        this.segments = [];
+        for (let i = 0; i < Configuration.SegmentCount; i++) {
+            this.segments.push(new RoadSegment(this.app.root, -i * Configuration.SegmentLength));
+        }
+        this.scenery = new OceanScenery(this.app.root);
+    }
+
+    resetRun() {
+        this.enemies.forEach(enemy => enemy.mesh.destroy());
+        this.buffs.forEach(buff => buff.remove());
+        this.hazards.forEach(hazard => hazard.remove());
+        this.gates.forEach(gate => gate.remove());
+        this.bullets.releaseAll();
+        this.particles.clear();
+        this.soldiers.forEach(soldier => soldier.mesh.destroy());
+
+        this.enemies = [];
+        this.buffs = [];
+        this.hazards = [];
+        this.gates = [];
+        this.soldiers = [];
+        this.timersMs = {
+            enemy: 0,
+            buff: 0,
+            hazard: 0,
+            fire: 0,
+            gate: Configuration.L1_GateInterval - Configuration.FirstGateDelayMs
+        };
+        this.score = 0;
+        this.lives = Configuration.MaxLives;
+        this.sessionSeconds = 0;
+        this.level = 1;
+        this.invulnerableSeconds = 0;
+        this.comboKillCount = 0;
+        this.comboRemainingSeconds = 0;
+        this.platoonX = 0;
+        this.platoonY = 0;
+        this.verticalVelocity = 0;
+        this.isAirborne = false;
+        this.runPhase = 0;
+        this.soldierTilt = 0;
+        this.input.dragPointerId = null;
+        this.input.dragTargetX = null;
+        this.platoon.setLocalPosition(0, 0, 0);
+        this.platoon.enabled = true;
+        this.addSoldiers(1);
+        this.refreshHud();
+    }
+
+    addSoldiers(requestedCount) {
+        const addableCount = Math.max(0, Math.min(requestedCount, Configuration.MaxSoldiers - this.soldiers.length));
+        for (let i = 0; i < addableCount; i++) {
+            const isLeader = this.soldiers.length === 0;
+            const mesh = HytaleModelFactory.createCrowdSoldier(isLeader);
+            this.platoon.addChild(mesh);
+            this.soldiers.push({
+                mesh,
+                isLeader,
+                localX: 0,
+                localZ: 0,
+                displayX: 0,
+                displayZ: 0,
+                runPhaseOffset: Math.random() * Math.PI * 2,
+                spawnPopSeconds: Configuration.SoldierSpawnPopSeconds,
+                muzzleFlashSeconds: 0
+            });
+        }
+        if (addableCount > 0) this.arrangeFormation();
+        return addableCount;
+    }
+
+    addSoldier() {
+        return this.addSoldiers(1) > 0;
+    }
+
+    removeSpecificSoldiers(soldiersToRemove) {
+        const removableSoldiers = soldiersToRemove.filter(soldier => !soldier.isLeader && this.soldiers.includes(soldier));
+        if (!removableSoldiers.length) return 0;
+        const soldierPosition = { x: 0, y: 0, z: 0 };
+        removableSoldiers.forEach(soldier => {
+            this.getSoldierWorldPosition(soldier, soldierPosition);
+            this.particles.burst({ x: soldierPosition.x, y: soldierPosition.y + 1.1, z: soldierPosition.z }, Configuration.Colors.PlayerUniform, 5, 0.32);
+            soldier.mesh.destroy();
+        });
+        this.soldiers = this.soldiers.filter(soldier => !removableSoldiers.includes(soldier));
+        this.arrangeFormation();
+        return removableSoldiers.length;
+    }
+
+    removeSoldier(soldier) {
+        return this.removeSpecificSoldiers([soldier]) > 0;
+    }
+
+    removeSoldiers(count) {
+        const followers = this.soldiers.filter(soldier => !soldier.isLeader);
+        return this.removeSpecificSoldiers(followers.slice(Math.max(0, followers.length - count)));
+    }
+
+    arrangeFormation() {
+        const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+        this.soldiers.forEach((soldier, index) => {
+            const radius = Configuration.CrowdSpacing * Math.sqrt(index);
+            const angle = index * goldenAngle;
+            soldier.localX = Math.cos(angle) * radius;
+            soldier.localZ = Math.sin(angle) * radius;
+        });
+        this.crowdRadius = Configuration.CrowdSpacing * Math.sqrt(Math.max(this.soldiers.length - 1, 0));
+        this.refreshHud();
+    }
+
+    getSoldierWorldPosition(soldier, targetVector) {
+        targetVector.x = this.platoonX + soldier.displayX;
+        targetVector.y = this.platoonY;
+        targetVector.z = soldier.displayZ;
+        return targetVector;
+    }
+
+    getPlatoonLimitX() {
+        return Math.max(
+            Configuration.MinPlatoonLimitX,
+            Configuration.RoadWidth / 2 - Configuration.CrowdEdgeMargin - this.crowdRadius * 0.9
+        );
+    }
+
+    initControls() {
+        const bindHoldButton = (elementId, onPress, onRelease) => {
+            const element = document.getElementById(elementId);
+            element.addEventListener('pointerdown', event => {
+                event.preventDefault();
+                if (element.setPointerCapture && event.pointerId !== undefined) {
+                    try { element.setPointerCapture(event.pointerId); } catch {}
+                }
+                element.classList.add('pressed');
+                onPress();
+            });
+            const release = () => { element.classList.remove('pressed'); onRelease(); };
+            ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(eventName => element.addEventListener(eventName, release));
+        };
+
+        bindHoldButton('btn-left', () => this.input.isTouchLeft = true, () => this.input.isTouchLeft = false);
+        bindHoldButton('btn-right', () => this.input.isTouchRight = true, () => this.input.isTouchRight = false);
+        bindHoldButton('btn-jump', () => this.requestJump(), () => {});
+
+        const gameCanvas = this.app.graphicsDevice.canvas;
+        gameCanvas.addEventListener('pointerdown', event => {
+            if (this.state !== 'playing') return;
+            this.input.dragPointerId = event.pointerId;
+            this.input.dragStartClientX = event.clientX;
+            this.input.dragStartPlatoonX = this.platoonX;
+            this.input.dragTargetX = this.platoonX;
+            try { gameCanvas.setPointerCapture(event.pointerId); } catch {}
+        });
+        gameCanvas.addEventListener('pointermove', event => {
+            if (event.pointerId !== this.input.dragPointerId) return;
+            const worldUnitsPerPixel = Configuration.DragWorldUnitsAcrossScreen / Math.max(window.innerWidth, 1);
+            this.input.dragTargetX = this.input.dragStartPlatoonX + (event.clientX - this.input.dragStartClientX) * worldUnitsPerPixel;
+        });
+        const endDrag = event => {
+            if (event.pointerId !== this.input.dragPointerId) return;
+            this.input.dragPointerId = null;
+            this.input.dragTargetX = null;
+        };
+        ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(eventName => gameCanvas.addEventListener(eventName, endDrag));
+
+        const leftKeys = ['arrowleft', 'a'];
+        const rightKeys = ['arrowright', 'd'];
+        const jumpKeys = ['arrowup', 'w', ' '];
+
+        window.addEventListener('keydown', event => {
+            const key = event.key.toLowerCase();
+            if ([...leftKeys, ...rightKeys, ...jumpKeys].includes(key)) event.preventDefault();
+            if (key === 'm') return this.toggleMute();
+            if (key === 'p' || key === 'escape') return this.togglePause();
+            if ((key === 'enter' || key === ' ') && (this.state === 'menu' || this.state === 'over')) return this.startRun();
+            if (key === 'enter' && this.state === 'paused') return this.togglePause();
+            this.input.pressedKeys.add(key);
+            if (jumpKeys.includes(key) && !event.repeat) this.requestJump();
+        });
+        window.addEventListener('keyup', event => this.input.pressedKeys.delete(event.key.toLowerCase()));
+        window.addEventListener('blur', () => {
+            this.input.pressedKeys.clear();
+            this.input.isTouchLeft = false;
+            this.input.isTouchRight = false;
+            this.input.dragPointerId = null;
+            this.input.dragTargetX = null;
+            if (this.state === 'playing') this.togglePause();
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && this.state === 'playing') this.togglePause();
+        });
+
+        this.isMovingLeft = () => this.input.isTouchLeft || leftKeys.some(key => this.input.pressedKeys.has(key));
+        this.isMovingRight = () => this.input.isTouchRight || rightKeys.some(key => this.input.pressedKeys.has(key));
+
+        document.getElementById('start-game').onclick = () => this.startRun();
+        document.getElementById('restart-game').onclick = () => this.startRun();
+        document.getElementById('resume-game').onclick = () => this.togglePause();
+        document.getElementById('btn-pause').onpointerdown = event => { event.preventDefault(); this.togglePause(); };
+        this.ui.muteButton.onpointerdown = event => { event.preventDefault(); this.toggleMute(); };
+    }
+
+    requestJump() {
+        this.input.jumpRequestedAtSeconds = this.clockSeconds;
+    }
+
+    startRun() {
+        this.sound.unlock();
+        if (this.state === 'over') this.resetRun();
+        this.ui.startModal.style.display = 'none';
+        this.ui.gameOverModal.style.display = 'none';
+        this.ui.pauseModal.style.display = 'none';
+        this.input.jumpRequestedAtSeconds = -Infinity;
+        this.state = 'playing';
+        this.sound.startMusic();
+    }
+
+    togglePause() {
+        if (this.state === 'playing') {
+            this.state = 'paused';
+            this.sound.stopMusic();
+            this.input.dragPointerId = null;
+            this.input.dragTargetX = null;
+            this.ui.pauseModal.style.display = 'block';
+        } else if (this.state === 'paused') {
+            this.sound.unlock();
+            this.state = 'playing';
+            this.sound.startMusic();
+            this.ui.pauseModal.style.display = 'none';
+            this.input.jumpRequestedAtSeconds = -Infinity;
+        }
+    }
+
+    toggleMute() {
+        this.sound.isMuted = !this.sound.isMuted;
+        this.ui.muteButton.innerText = this.sound.isMuted ? '🔇' : '🔊';
+    }
+
+    loop(dt) {
+        const deltaSeconds = Math.min(Math.max(dt, 0), 0.05);
+        this.clockSeconds += deltaSeconds;
+        const frameScale = deltaSeconds * 60;
+
+        this.animateOcean(deltaSeconds, this.state === 'playing' ? 1 : 0.4);
+
+        if (this.state === 'playing') {
+            this.update(deltaSeconds, frameScale);
+        } else if (this.state === 'menu') {
+            this.segments.forEach(segment => segment.update(frameScale * 0.4));
+            this.scenery.update(frameScale, 0.4);
+            this.animatePlatoon(deltaSeconds * 0.6);
+        }
+        this.updateCamera(deltaSeconds);
+    }
+
+    animateOcean(deltaSeconds, speedScale) {
+        if (!this.waterBaseMat || !this.waterOverlayMat) return;
+        this.waterOffset.x = (this.waterOffset.x + deltaSeconds * 0.03) % 1;
+        this.waterOffset.y = (this.waterOffset.y - deltaSeconds * 0.4 * speedScale) % 1;
+        this.waterBaseMat.diffuseMapOffset = this.waterOffset;
+        this.waterBaseMat.emissiveMapOffset = this.waterOffset;
+        this.waterBaseMat.update();
+
+        this.waterOverlayOffset.x = (this.waterOverlayOffset.x - deltaSeconds * 0.06) % 1;
+        this.waterOverlayOffset.y = (this.waterOverlayOffset.y - deltaSeconds * 0.5 * speedScale) % 1;
+        this.waterOverlayMat.diffuseMapOffset = this.waterOverlayOffset;
+        this.waterOverlayMat.update();
+    }
+
+    update(deltaSeconds, frameScale) {
+        this.sessionSeconds += deltaSeconds;
+        this.checkLevelProgression();
+        this.updatePlatoonMovement(deltaSeconds, frameScale);
+        this.animatePlatoon(deltaSeconds);
+        this.segments.forEach(segment => segment.update(frameScale));
+        this.scenery.update(frameScale, 1);
+        this.processSpawns(deltaSeconds * 1000);
+        this.bullets.update(frameScale);
+        this.updateEntities(deltaSeconds, frameScale);
+        this.checkCollisions();
+        this.bullets.releaseSpent();
+        this.removeDestroyedEntities();
+        this.particles.update(frameScale, deltaSeconds);
+        this.updateTimers(deltaSeconds);
+        this.refreshHud();
+    }
+
+    checkLevelProgression() {
+        const expectedLevel = 1 + Math.floor(this.sessionSeconds / Configuration.LevelDurationSeconds);
+        if (expectedLevel <= this.level) return;
+        this.level = expectedLevel;
+        if (this.lives < Configuration.MaxLives) this.lives++;
+        const subtitle = this.level === 2 ? 'ATAQUE TOTAL' : 'A HORDA CRESCE';
+        this.showAlert(this.ui.levelAlert, `FASE ${this.level}<small>${subtitle}</small>`);
+        this.sound.playLevelUp();
+    }
+
+    showAlert(element, html, toneClass = null) {
+        element.innerHTML = html;
+        element.classList.remove('show', 'tone-good', 'tone-bad');
+        if (toneClass) element.classList.add(toneClass);
+        void element.offsetWidth;
+        element.classList.add('show');
+    }
+
+    updatePlatoonMovement(deltaSeconds, frameScale) {
+        const limitX = this.getPlatoonLimitX();
+        let moveDirection = (this.isMovingRight() ? 1 : 0) - (this.isMovingLeft() ? 1 : 0);
+        if (this.input.dragTargetX !== null) {
+            const clampedTargetX = pc.math.clamp(this.input.dragTargetX, -limitX, limitX);
+            const distanceToTarget = clampedTargetX - this.platoonX;
+            const maxStep = Configuration.DragFollowSpeed * frameScale;
+            this.platoonX += pc.math.clamp(distanceToTarget, -maxStep, maxStep);
+            moveDirection = Math.abs(distanceToTarget) > 0.05 ? Math.sign(distanceToTarget) : 0;
+        } else {
+            this.platoonX += moveDirection * Configuration.MoveSpeed * frameScale;
+        }
+        this.platoonX = pc.math.clamp(this.platoonX, -limitX, limitX);
+        this.soldierTilt = pc.math.lerp(this.soldierTilt, -moveDirection * 0.18, Math.min(1, deltaSeconds * 12));
+
+        const hasBufferedJump = this.clockSeconds - this.input.jumpRequestedAtSeconds <= Configuration.JumpBufferSeconds;
+        if (!this.isAirborne && hasBufferedJump) {
+            this.isAirborne = true;
+            this.verticalVelocity = Configuration.JumpForce;
+            this.input.jumpRequestedAtSeconds = -Infinity;
+            this.sound.playJump();
+        }
+        if (this.isAirborne) {
+            this.platoonY += this.verticalVelocity * frameScale;
+            this.verticalVelocity -= Configuration.Gravity * frameScale;
+            if (this.platoonY <= 0) {
+                this.platoonY = 0;
+                this.isAirborne = false;
+                this.particles.burst({ x: this.platoonX, y: 0.2, z: 1 }, Configuration.Colors.LandingDust, 8, 0.22);
+            }
+        }
+        this.platoon.setLocalPosition(this.platoonX, this.platoonY, 0);
+    }
+
+    animatePlatoon(deltaSeconds) {
+        this.runPhase += deltaSeconds * 13;
+        this.muzzleFlashTimer = Math.max(0, this.muzzleFlashTimer - deltaSeconds);
+        this.platoonLight.light.intensity = this.muzzleFlashTimer > 0 ? 2.6 : 1.2;
+
+        const followRate = Math.min(1, deltaSeconds * 10);
+        const tiltDeg = this.soldierTilt * RAD_TO_DEG;
+        this.soldiers.forEach(soldier => {
+            soldier.displayX = pc.math.lerp(soldier.displayX, soldier.localX, followRate);
+            soldier.displayZ = pc.math.lerp(soldier.displayZ, soldier.localZ, followRate);
+            HytaleModelFactory.animateRunCycle(soldier.mesh, this.runPhase + soldier.runPhaseOffset, this.isAirborne ? 0.25 : 0.7);
+            soldier.mesh.setLocalEulerAngles(0, 0, tiltDeg);
+            const bounceY = this.isAirborne ? 0 : Math.abs(Math.sin(this.runPhase + soldier.runPhaseOffset)) * 0.12;
+            soldier.mesh.setLocalPosition(soldier.displayX, bounceY, soldier.displayZ);
+
+            if (soldier.spawnPopSeconds > 0) {
+                soldier.spawnPopSeconds = Math.max(0, soldier.spawnPopSeconds - deltaSeconds);
+                const popProgress = 1 - soldier.spawnPopSeconds / Configuration.SoldierSpawnPopSeconds;
+                const popScale = Configuration.SoldierScale * Math.max(0.05, easeOutBack(popProgress));
+                soldier.mesh.setLocalScale(popScale, popScale, popScale);
+            }
+
+            soldier.muzzleFlashSeconds = Math.max(0, soldier.muzzleFlashSeconds - deltaSeconds);
+            soldier.mesh.limbs.muzzleFlash.enabled = soldier.muzzleFlashSeconds > 0;
+        });
+
+        const shadowScale = (this.crowdRadius * 2 + 1.8) * Math.max(0.5, 1 - this.platoonY * 0.08);
+        this.crowdShadow.setLocalPosition(0, -this.platoonY + 0.04, 0);
+        this.crowdShadow.setLocalScale(shadowScale, 1, shadowScale);
+    }
+
+    getDifficulty() {
+        if (this.level === 1) {
+            const levelProgress = Math.min(this.sessionSeconds / Configuration.LevelDurationSeconds, 1);
+            return {
+                enemyIntervalMs: pc.math.lerp(Configuration.L1_SpawnInterval_Start, Configuration.L1_SpawnInterval_End, levelProgress),
+                enemyGroupSize: 1 + Math.floor(levelProgress * 3),
+                enemyHp: 3,
+                enemySpeed: Configuration.EnemyBaseSpeed,
+                buffIntervalMs: Configuration.L1_BuffInterval,
+                hazardIntervalMs: Configuration.L1_HazardInterval,
+                gateIntervalMs: Configuration.L1_GateInterval,
+                bruteChance: 0
+            };
+        }
+        const levelsBeyondTwo = this.level - 2;
+        return {
+            enemyIntervalMs: Math.max(600, Configuration.L2_SpawnInterval - levelsBeyondTwo * 100),
+            enemyGroupSize: Math.min(5 + levelsBeyondTwo, 10),
+            enemyHp: 3 + (this.level - 1) * 2,
+            enemySpeed: Configuration.EnemyBaseSpeed + levelsBeyondTwo * Configuration.EnemySpeedPerLevel,
+            buffIntervalMs: Math.max(2600, Configuration.L2_BuffInterval - levelsBeyondTwo * 200),
+            hazardIntervalMs: Math.max(1600, Configuration.L2_HazardInterval - levelsBeyondTwo * 250),
+            gateIntervalMs: Math.max(Configuration.MinGateInterval, Configuration.L2_GateInterval - levelsBeyondTwo * 300),
+            bruteChance: Math.min(0.12 + levelsBeyondTwo * 0.05, 0.35)
+        };
+    }
+
+    processSpawns(deltaMs) {
+        Object.keys(this.timersMs).forEach(timerName => this.timersMs[timerName] += deltaMs);
+        const difficulty = this.getDifficulty();
+        const isGateImminent = difficulty.gateIntervalMs - this.timersMs.gate < Configuration.GateClearanceMs;
+
+        if (this.timersMs.enemy > difficulty.enemyIntervalMs) {
+            this.spawnEnemyWave(difficulty);
+            this.timersMs.enemy = 0;
+        }
+
+        if (this.timersMs.gate > difficulty.gateIntervalMs) {
+            const [leftSpec, rightSpec] = this.createGateSpecs();
+            this.gates.push(new GateWall(this.app, leftSpec, rightSpec));
+            this.timersMs.gate = 0;
+            this.timersMs.hazard = Math.min(this.timersMs.hazard, difficulty.hazardIntervalMs - Configuration.GateClearanceMs);
+            this.timersMs.buff = Math.min(this.timersMs.buff, difficulty.buffIntervalMs - Configuration.GateClearanceMs);
+        }
+
+        if (this.timersMs.buff > difficulty.buffIntervalMs && !isGateImminent) {
+            const requiredHits = 10 + this.soldiers.length * 2 + (this.level - 1) * 3;
+            const rewardSoldiers = 2 + Math.floor(this.level / 2) + Math.floor(Math.random() * 3);
+            this.buffs.push(new BuffEntity(this.app, (Math.random() - 0.5) * 8, requiredHits, rewardSoldiers));
+            this.timersMs.buff = 0;
+        }
+
+        if (this.timersMs.hazard > difficulty.hazardIntervalMs && !isGateImminent) {
+            this.hazards.push(new HazardObstacle(this.app.root, (Math.random() - 0.5) * 12));
+            this.timersMs.hazard = 0;
+        }
+
+        if (this.timersMs.fire > Configuration.FireRateMs) {
+            this.fireVolley();
+            this.timersMs.fire = 0;
+        }
+    }
+
+    createGateSpecs() {
+        const randomInt = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
+        const goodSpec = { operation: 'add', value: randomInt(3, 6) + this.level };
+        const roll = Math.random();
+        const canMultiply = this.soldiers.length >= 3 && this.soldiers.length <= Configuration.MaxSoldiers / 2;
+        let otherSpec;
+        if (roll < 0.3 && canMultiply) otherSpec = { operation: 'multiply', value: 2 };
+        else if (roll < 0.78) otherSpec = { operation: 'add', value: -(randomInt(2, 5) + this.level) };
+        else otherSpec = { operation: 'add', value: randomInt(1, 3) };
+        return Math.random() < 0.5 ? [goodSpec, otherSpec] : [otherSpec, goodSpec];
+    }
+
+    fireVolley() {
+        const soldierCount = this.soldiers.length;
+        if (!soldierCount) return;
+        const shooterCount = Math.min(soldierCount, Configuration.MaxBulletsPerVolley);
+        const shooterStride = soldierCount / shooterCount;
+        const rotationOffset = (this.volleyIndex++ * 0.618) % 1;
+        const soldierPosition = { x: 0, y: 0, z: 0 };
+        for (let shooterIndex = 0; shooterIndex < shooterCount; shooterIndex++) {
+            const soldier = this.soldiers[Math.floor((shooterIndex + rotationOffset) * shooterStride) % soldierCount];
+            this.getSoldierWorldPosition(soldier, soldierPosition);
+            this.bullets.spawn(
+                soldierPosition.x + Configuration.SoldierGunOffsetX,
+                soldierPosition.y + Configuration.SoldierGunHeight,
+                soldierPosition.z + Configuration.SoldierGunForwardOffset,
+                shooterStride
+            );
+            soldier.muzzleFlashSeconds = 0.05;
+        }
+        this.muzzleFlashTimer = 0.045;
+    }
+
+    spawnEnemyWave(difficulty) {
+        const crowdHpScale = 1 + this.soldiers.length * Configuration.EnemyHpPerSoldier;
+        const bruteChance = difficulty.bruteChance || 0;
+        for (let i = 0; i < difficulty.enemyGroupSize; i++) {
+            const isBrute = Math.random() < bruteChance;
+            const scale = isBrute ? 1.6 : 1;
+            const mesh = HytaleModelFactory.createZombie(isBrute);
+            const x = (Math.random() - 0.5) * 11;
+            const z = Configuration.SpawnZ - i * 3 - Math.random() * 2;
+            mesh.setLocalScale(scale, scale, scale);
+            mesh.setLocalEulerAngles(0, 180, 0);
+            mesh.setLocalPosition(x, 0, z);
+            this.app.root.addChild(mesh);
+
+            const baseHp = isBrute ? difficulty.enemyHp * 5 : difficulty.enemyHp;
+            this.enemies.push({
+                mesh,
+                x,
+                z,
+                hp: Math.max(1, Math.round(baseHp * crowdHpScale)),
+                baseScale: scale,
+                isBrute,
+                speed: difficulty.enemySpeed * (isBrute ? 0.75 : 1),
+                hitHalfWidth: 1.5 * scale,
+                contactHalfWidth: 0.7 * scale,
+                scoreValue: isBrute ? 200 : 50,
+                deathColor: isBrute ? Configuration.Colors.BruteGoo : Configuration.Colors.ZombieGoo,
+                hitPulseSeconds: 0,
+                runPhaseOffset: Math.random() * Math.PI * 2,
+                isDestroyed: false
+            });
+        }
+    }
+
+    updateEntities(deltaSeconds, frameScale) {
+        this.enemies.forEach(enemy => {
+            enemy.z += (enemy.speed + Configuration.WorldSpeed) * frameScale;
+            enemy.mesh.setLocalPosition(enemy.x, 0, enemy.z);
+            enemy.hitPulseSeconds = Math.max(0, enemy.hitPulseSeconds - deltaSeconds);
+            const s = enemy.baseScale * (1 + enemy.hitPulseSeconds * 2);
+            enemy.mesh.setLocalScale(s, s, s);
+            HytaleModelFactory.animateRunCycle(enemy.mesh, this.runPhase * 0.8 + enemy.runPhaseOffset);
+            if (enemy.z > Configuration.EnemyBreachZ) {
+                enemy.isDestroyed = true;
+                this.takeDamage();
+            }
+        });
+        this.buffs.forEach(buff => { if (buff.update(frameScale, deltaSeconds)) buff.isDestroyed = true; });
+        this.hazards.forEach(hazard => { if (hazard.update(frameScale)) hazard.isDestroyed = true; });
+        this.gates.forEach(gate => { if (gate.update(frameScale, deltaSeconds)) gate.isDestroyed = true; });
+    }
+
+    checkCollisions() {
+        this.checkBulletCollisions();
+        this.checkEnemyContact();
+        this.checkHazardCollisions();
+        this.checkGateCrossings();
+    }
+
+    checkBulletCollisions() {
+        const isSweptHit = (bullet, targetX, targetZ, halfWidth, halfDepth) =>
+            Math.abs(bullet.x - targetX) < halfWidth &&
+            targetZ + halfDepth >= bullet.z &&
+            targetZ - halfDepth <= bullet.previousZ;
+        const halfRoad = Configuration.RoadWidth / 2;
+
+        this.bullets.liveBullets.forEach(bullet => {
+            if (bullet.isSpent) return;
+            for (const enemy of this.enemies) {
+                if (enemy.isDestroyed) continue;
+                if (isSweptHit(bullet, enemy.x, enemy.z, enemy.hitHalfWidth, 1)) {
+                    bullet.isSpent = true;
+                    this.hitEnemy(enemy, bullet, bullet.damage);
+                    return;
+                }
+            }
+            for (const buff of this.buffs) {
+                if (buff.isDestroyed) continue;
+                const buffPos = buff.group.getLocalPosition();
+                if (isSweptHit(bullet, buffPos.x, buffPos.z, buff.halfWidth, 2)) {
+                    bullet.isSpent = true;
+                    this.hitBuff(buff, bullet.damage);
+                    return;
+                }
+            }
+            for (const gate of this.gates) {
+                if (gate.isDestroyed) continue;
+                if (isSweptHit(bullet, 0, gate.z, halfRoad, 0.6)) {
+                    bullet.isSpent = true;
+                    this.hitGate(gate, gate.getPanelIndexForX(bullet.x), bullet);
+                    return;
+                }
+            }
+        });
+    }
+
+    hitEnemy(enemy, impactPosition, damage = 1) {
+        enemy.hp -= damage;
+        enemy.hitPulseSeconds = 0.08;
+        if (enemy.hp > 0) {
+            this.particles.burst(impactPosition, Configuration.Colors.Bullet, 2, 0.22);
+            this.sound.playEnemyHit();
+            return;
+        }
+        enemy.isDestroyed = true;
+        this.comboKillCount++;
+        this.comboRemainingSeconds = Configuration.ComboWindowSeconds;
+        this.score += enemy.scoreValue * this.getComboMultiplier();
+        const burstOrigin = { x: enemy.x, y: 1.2 * enemy.baseScale, z: enemy.z };
+        this.particles.burst(burstOrigin, enemy.deathColor, 12, 0.42);
+        this.particles.burst(burstOrigin, Configuration.Colors.Blood, 6, 0.36);
+        this.particles.shockwave({ x: enemy.x, y: 0.2, z: enemy.z }, enemy.deathColor, enemy.isBrute ? 6.5 : 3.8);
+        this.sound.playEnemyKill();
+        if (enemy.isBrute) this.cameraShakeIntensity = Math.max(this.cameraShakeIntensity, 0.45);
+    }
+
+    hitBuff(buff, damage = 1) {
+        this.sound.playBuffHit();
+        if (!buff.registerHit(damage)) return;
+        buff.isDestroyed = true;
+        const pos = buff.group.getLocalPosition();
+        const burstOrigin = { x: pos.x, y: 1.8, z: pos.z };
+        this.particles.burst(burstOrigin, Configuration.Colors.BarrelGlow, 24, 0.55);
+        this.particles.shockwave({ x: pos.x, y: 0.3, z: pos.z }, Configuration.Colors.BarrelGlow, 7.5);
+        const addedCount = this.addSoldiers(buff.rewardSoldiers);
+        if (addedCount > 0) {
+            this.showAlert(this.ui.toastAlert, `+${addedCount} SOLDADO${addedCount > 1 ? 'S' : ''}`, 'tone-good');
+        } else {
+            this.score += Configuration.MaxSoldierBonusScore;
+            this.showAlert(this.ui.toastAlert, `ESQUADRÃO MÁXIMO +${Configuration.MaxSoldierBonusScore}`, 'tone-good');
+        }
+        this.sound.playRecruit();
+    }
+
+    hitGate(gate, panelIndex, bullet) {
+        if (!gate.registerHit(panelIndex)) return;
+        const panel = gate.panels[panelIndex];
+        this.particles.burst({ x: panel.centerX, y: 4.2, z: gate.z }, GateWall.isSpecPositive(panel.spec) ? Configuration.Colors.GateGood : Configuration.Colors.GateBad, 3, 0.25);
+        this.sound.playBuffHit();
+    }
+
+    checkGateCrossings() {
+        this.gates.forEach(gate => {
+            if (gate.isDestroyed) return;
+            if (!(gate.previousZ < 0 && gate.z >= 0)) return;
+            gate.isDestroyed = true;
+            const panel = gate.panels[gate.getPanelIndexForX(this.platoonX)];
+            this.applyGateEffect(panel.spec, panel.centerX, gate.z);
+        });
+    }
+
+    applyGateEffect(spec, panelX, gateZ) {
+        const currentCount = this.soldiers.length;
+        const targetCount = spec.operation === 'multiply'
+            ? Math.round(currentCount * spec.value)
+            : currentCount + spec.value;
+        const isPositive = GateWall.isSpecPositive(spec);
+        const effectColor = isPositive ? Configuration.Colors.GateGood : Configuration.Colors.GateBad;
+        this.particles.burst({ x: panelX, y: 2.5, z: gateZ }, effectColor, 26, 0.5);
+        this.particles.shockwave({ x: panelX, y: 0.3, z: gateZ }, effectColor, 7);
+
+        if (targetCount >= currentCount) {
+            const requestedCount = targetCount - currentCount;
+            const addedCount = this.addSoldiers(requestedCount);
+            this.score += (requestedCount - addedCount) * Configuration.OverflowSoldierScore;
+            this.showAlert(this.ui.toastAlert, `+${requestedCount} SOLDADOS`, 'tone-good');
+            this.sound.playRecruit();
+            return;
+        }
+        this.removeSoldiers(currentCount - Math.max(targetCount, 1));
+        this.showAlert(this.ui.toastAlert, `-${currentCount - targetCount} SOLDADOS`, 'tone-bad');
+        this.sound.playSoldierLost();
+        this.cameraShakeIntensity = Math.max(this.cameraShakeIntensity, 0.35);
+        if (targetCount < 1) this.takeDamage();
+    }
+
+    checkEnemyContact() {
+        if (this.platoonY > 1.5) return;
+        const soldierPosition = { x: 0, y: 0, z: 0 };
+        for (const enemy of this.enemies) {
+            if (enemy.isDestroyed) continue;
+            const touchedSoldier = this.soldiers.find(soldier => {
+                this.getSoldierWorldPosition(soldier, soldierPosition);
+                return Math.abs(soldierPosition.x - enemy.x) < enemy.contactHalfWidth + Configuration.SoldierHalfWidth &&
+                       Math.abs(soldierPosition.z - enemy.z) < 0.8;
+            });
+            if (!touchedSoldier) continue;
+            enemy.isDestroyed = true;
+            this.particles.burst({ x: enemy.x, y: 1.2, z: enemy.z }, enemy.deathColor, 10, 0.4);
+            if (touchedSoldier.isLeader) {
+                this.takeDamage();
+                continue;
+            }
+            this.removeSoldier(touchedSoldier);
+            if (enemy.isBrute) this.removeSoldiers(Configuration.BruteContactSoldierLoss - 1);
+            this.sound.playSoldierLost();
+            this.cameraShakeIntensity = Math.max(this.cameraShakeIntensity, 0.3);
+        }
+    }
+
+    checkHazardCollisions() {
+        if (this.platoonY >= 1.8) return;
+        const soldierPosition = { x: 0, y: 0, z: 0 };
+        const hazardHalfDepth = 0.75;
+        const soldierHalfWidth = Configuration.SoldierHalfWidth;
+        this.hazards.forEach(hazard => {
+            const hazardPos = hazard.group.getLocalPosition();
+            const collidingSoldiers = this.soldiers.filter(soldier => {
+                this.getSoldierWorldPosition(soldier, soldierPosition);
+                return Math.abs(soldierPosition.x - hazardPos.x) < hazard.halfWidth + soldierHalfWidth &&
+                       hazard.previousZ - hazardHalfDepth <= soldierPosition.z + soldierHalfWidth &&
+                       hazardPos.z + hazardHalfDepth >= soldierPosition.z - soldierHalfWidth;
+            });
+            if (!collidingSoldiers.length) return;
+            if (!hazard.hasCollided) {
+                hazard.hasCollided = true;
+                this.particles.burst(hazardPos, Configuration.Colors.HazardStripe, 12, 0.4);
+                this.particles.shockwave({ x: hazardPos.x, y: 0.2, z: hazardPos.z }, Configuration.Colors.HazardStripe, 5.0);
+            }
+            if (this.removeSpecificSoldiers(collidingSoldiers) > 0) {
+                this.sound.playSoldierLost();
+                this.cameraShakeIntensity = Math.max(this.cameraShakeIntensity, 0.25);
+            }
+            if (!hazard.hasHitLeader && collidingSoldiers.some(soldier => soldier.isLeader)) {
+                hazard.hasHitLeader = true;
+                this.takeDamage();
+            }
+        });
+    }
+
+    removeDestroyedEntities() {
+        this.enemies = this.enemies.filter(enemy => {
+            if (!enemy.isDestroyed) return true;
+            enemy.mesh.destroy();
+            return false;
+        });
+        this.buffs = this.buffs.filter(buff => {
+            if (!buff.isDestroyed) return true;
+            buff.remove();
+            return false;
+        });
+        this.hazards = this.hazards.filter(hazard => {
+            if (!hazard.isDestroyed) return true;
+            hazard.remove();
+            return false;
+        });
+        this.gates = this.gates.filter(gate => {
+            if (!gate.isDestroyed) return true;
+            gate.remove();
+            return false;
+        });
+    }
+
+    updateTimers(deltaSeconds) {
+        if (this.invulnerableSeconds > 0) {
+            this.invulnerableSeconds = Math.max(0, this.invulnerableSeconds - deltaSeconds);
+            this.platoon.enabled = this.invulnerableSeconds === 0 || Math.floor(this.invulnerableSeconds * 14) % 2 === 0;
+        }
+        if (this.comboRemainingSeconds > 0) {
+            this.comboRemainingSeconds = Math.max(0, this.comboRemainingSeconds - deltaSeconds);
+            if (this.comboRemainingSeconds === 0) this.comboKillCount = 0;
+        }
+    }
+
+    getComboMultiplier() {
+        return Math.min(1 + Math.floor(this.comboKillCount / Configuration.KillsPerComboStep), Configuration.MaxComboMultiplier);
+    }
+
+    takeDamage() {
+        if (this.invulnerableSeconds > 0 || this.state !== 'playing') return;
+        this.lives--;
+        this.invulnerableSeconds = Configuration.InvulnerabilitySeconds;
+        this.comboKillCount = 0;
+        this.comboRemainingSeconds = 0;
+        this.cameraShakeIntensity = 1.1;
+        this.sound.playDamage();
+        this.ui.damageFlash.style.background = 'radial-gradient(circle, rgba(255, 0, 55, 0.15) 20%, rgba(255, 0, 55, 0.65) 100%)';
+        this.ui.damageFlash.style.opacity = '1';
+        setTimeout(() => this.ui.damageFlash.style.opacity = '0', 160);
+        this.refreshHud();
+        if (this.lives <= 0) this.gameOver();
+    }
+
+    updateCamera(deltaSeconds) {
+        this.cameraZoomRadius = pc.math.lerp(this.cameraZoomRadius, this.crowdRadius, Math.min(1, deltaSeconds * 2));
+        const targetX = this.platoonX * 0.35;
+        this.cameraCurrentX = pc.math.lerp(this.cameraCurrentX, targetX, Math.min(1, deltaSeconds * 5));
+        let camX = this.cameraCurrentX;
+        let camY = this.cameraBasePosition.y + this.cameraZoomRadius * 1.1;
+        const camZ = this.cameraBasePosition.z + this.cameraZoomRadius * 0.9;
+
+        if (this.cameraShakeIntensity > 0) {
+            camX += (Math.random() - 0.5) * this.cameraShakeIntensity;
+            camY += (Math.random() - 0.5) * this.cameraShakeIntensity;
+            this.cameraShakeIntensity = Math.max(0, this.cameraShakeIntensity - deltaSeconds * 3);
+        }
+        this.camera.setLocalPosition(camX, camY, camZ);
+        this.cameraLookTarget.x = camX * 0.7;
+        this.camera.lookAt(this.cameraLookTarget);
+    }
+
+    setHudText(element, cacheKey, value) {
+        if (this.hudCache[cacheKey] === value) return;
+        this.hudCache[cacheKey] = value;
+        element.innerText = value;
+    }
+
+    drawCrowdBadge(soldierCount) {
+        const { context, texture } = this.crowdCountLabel;
+        const isFull = soldierCount >= Configuration.MaxSoldiers;
+        context.clearRect(0, 0, 256, 128);
+        traceRoundedRect(context, 28, 20, 200, 88, 44);
+        const badgeGradient = context.createLinearGradient(0, 20, 0, 108);
+        badgeGradient.addColorStop(0, isFull ? '#ffe27a' : '#6fc0ff');
+        badgeGradient.addColorStop(1, isFull ? '#f08c00' : '#1559c9');
+        context.fillStyle = badgeGradient;
+        context.fill();
+        context.lineWidth = 8;
+        context.strokeStyle = '#0a1426';
+        context.stroke();
+        drawOutlinedText(context, String(soldierCount), 128, 66, 72, '#ffffff', 12);
+        texture.upload();
+    }
+
+    refreshHud() {
+        const soldierCount = this.soldiers.length;
+        this.setHudText(this.ui.score, 'score', String(this.score));
+        this.setHudText(this.ui.level, 'level', String(this.level));
+        this.setHudText(this.ui.time, 'time', `${Math.floor(this.sessionSeconds)}s`);
+        this.setHudText(this.ui.soldiers, 'soldiers', String(soldierCount));
+        this.setHudText(this.ui.lives, 'lives', '♥'.repeat(Math.max(this.lives, 0)) + '♡'.repeat(Math.max(Configuration.MaxLives - this.lives, 0)));
+
+        const levelProgressPercent = Math.min(100, Math.floor(((this.sessionSeconds % Configuration.LevelDurationSeconds) / Configuration.LevelDurationSeconds) * 100));
+        if (this.hudCache.levelProgress !== levelProgressPercent) {
+            this.hudCache.levelProgress = levelProgressPercent;
+            this.ui.levelProgressFill.style.width = `${levelProgressPercent}%`;
+        }
+
+        if (this.crowdCountLabel && this.hudCache.crowdBadge !== soldierCount) {
+            this.hudCache.crowdBadge = soldierCount;
+            this.drawCrowdBadge(soldierCount);
+        }
+
+        const comboMultiplier = this.getComboMultiplier();
+        const comboText = comboMultiplier > 1 ? `COMBO x${comboMultiplier}` : '';
+        if (this.hudCache.combo !== comboText && comboText) {
+            this.ui.combo.classList.add('bump');
+            setTimeout(() => this.ui.combo.classList.remove('bump'), 100);
+        }
+        this.setHudText(this.ui.combo, 'combo', comboText);
+    }
+
+    gameOver() {
+        this.state = 'over';
+        this.sound.stopMusic();
+        this.platoon.enabled = true;
+        const isNewRecord = this.score > this.highScore;
+        if (isNewRecord) {
+            this.highScore = this.score;
+            HighScoreStorage.write(this.highScore);
+        }
+        this.ui.finalScore.innerText = String(this.score);
+        this.ui.finalTime.innerText = `${Math.floor(this.sessionSeconds)}s`;
+        this.ui.finalLevel.innerText = String(this.level);
+        this.ui.finalBest.innerText = `🏆 RECORDE: ${this.highScore}`;
+        this.ui.newRecord.style.display = isNewRecord ? 'block' : 'none';
+        this.ui.gameOverModal.style.display = 'block';
+    }
+}
+
+window.onload = () => {
+    if (typeof pc === 'undefined') {
+        document.getElementById('loading-screen').innerText = 'FALHA AO CARREGAR PLAYCANVAS — VERIFIQUE A CONEXÃO';
+        return;
+    }
+    window.__game = new GameEngine();
+};
+</script>
+</body>
+</html>

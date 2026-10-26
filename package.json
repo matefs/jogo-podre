@@ -1,0 +1,9 @@
+{
+  "name": "bridge-defense-playcanvas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bridge Defense - Tactical Protocol (PlayCanvas)",
+  "scripts": {
+    "test": "node test-cli.js"
+  }
+}
