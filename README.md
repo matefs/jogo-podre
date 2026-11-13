@@ -1,5 +1,8 @@
 # 🌉 Bridge Defense - Last Stand
 
+<img width="1388" height="825" alt="Screenshot 2026-11-13 at 12 38 09" src="https://github.com/user-attachments/assets/5f8ee4de-bb79-4fda-bebe-a57ad60e2d0c" />
+
+
 Um jogo de defesa tática 3D estilo arcade/hyper-casual construído em um único arquivo com **PlayCanvas WebGL** e **Web Audio API** procedural.
 
 ## 🎮 Sobre o Jogo
